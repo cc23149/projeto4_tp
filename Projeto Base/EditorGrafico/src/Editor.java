@@ -11,6 +11,14 @@ public class Editor extends JFrame
     static private MeuJPanel pnlDesenho;
     private static ManterFiguras figuras;     // objeto de manutenção de vetor de figuras geométricas
 
+
+    //========== do projeto =========
+    // flags adicionais para circulo/oval
+    static boolean esperaCentroCirculo = false, esperaRaioCirculo = false;
+    static boolean esperaCentroOval = false, esperaRaioAOval = false, esperaRaioBOval = false;
+
+
+
     private static JLabel statusBar1, statusBar2;
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
@@ -64,6 +72,13 @@ public class Editor extends JFrame
         btnPonto.addActionListener(new DesenhaPonto());  // dá inicio ao fornecimento de um Ponto
         btnLinha.addActionListener(new DesenhaLinha());  // dá inicio ao fornecimento de uma Linha
 
+        //========= novo do projeto =============
+        btnCirculo.addActionListener(new DesenhaCirculo());
+        btnElipse.addActionListener(new DesenhaElipse());
+        btnCor.addActionListener(new EscolheCor());
+        btnApagar.addActionListener(new ApagarTudo());
+
+
         Container cntForm = getContentPane(); // acessa o painel de conteúdo do JFrame
         cntForm.setLayout(new BorderLayout());  // COnfigura layout do JFrame para Border
         cntForm.add(pnlBotoes , BorderLayout.NORTH);    // coloca JPanel no topo do Layout
@@ -110,12 +125,20 @@ public class Editor extends JFrame
         pnlDesenho.paintComponent(g);
     }
 
+    //========= do projeto  ========
+    //add outras variaveis
     private void limparEsperas()
     {
         esperaPonto = false;
         esperaInicioLinha = false;
         esperaFimLinha = false;
+        esperaCentroCirculo = false;
+        esperaRaioCirculo = false;
+        esperaCentroOval = false;
+        esperaRaioAOval = false;
+        esperaRaioBOval = false;
     }
+
 
     private class FazAbertura implements ActionListener {
         public void actionPerformed(ActionEvent e)	// código executado no evento
@@ -221,6 +244,43 @@ public class Editor extends JFrame
         }
     }
 
+    //============== classes do projeto ============
+    private class DesenhaCirculo implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            statusBar1.setText("Mensagem: clique no centro do círculo:");
+            limparEsperas();
+            esperaCentroCirculo = true;
+        }
+    }
+
+    private class DesenhaElipse implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            statusBar1.setText("Mensagem: clique no centro da elipse:");
+            limparEsperas();
+            esperaCentroOval = true;
+        }
+    }
+
+    private class EscolheCor implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            Color nova = JColorChooser.showDialog(Editor.this, "Escolha a cor", corAtual);
+            if (nova != null) {
+                corAtual = nova;
+                statusBar1.setText("Mensagem: cor atual atualizada.");
+            }
+        }
+    }
+
+    private class ApagarTudo implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            // esvaziar vetor e repintar
+            figuras = new ManterFiguras(100); // re-cria o objeto
+            pnlDesenho.repaint();
+            statusBar1.setText("Mensagem: área limpa.");
+        }
+    }
+
+
 
     private class MeuJPanel extends JPanel implements MouseListener, MouseMotionListener
     {
@@ -284,6 +344,67 @@ public class Editor extends JFrame
                         esperaFimLinha = false;  // linha terminada e incluída
                     }
 
+
+                //============= Do Projeto ===========
+                else if (esperaCentroCirculo)
+                {
+                    // guarda o centro do círculo
+                    p1.setX(e.getX());
+                    p1.setY(e.getY());
+                    p1.setCor(corAtual);
+
+                    esperaCentroCirculo = false;
+                    esperaRaioCirculo = true;
+                    statusBar1.setText("Mensagem: clique em um ponto da circunferência (para definir o raio):");
+                }
+                else if (esperaRaioCirculo)
+                {
+                    // calcula o raio com base na distância entre o centro e o clique
+                    int dx = e.getX() - p1.getX();
+                    int dy = e.getY() - p1.getY();
+                    int raio = (int)Math.sqrt(dx*dx + dy*dy);
+
+                    Circulo c = new Circulo(p1, raio, corAtual);
+                    figuras.incluirNoFinal(c);
+                    c.desenhar(corAtual, pnlDesenho.getGraphics());
+                    pnlDesenho.repaint();
+
+                    esperaRaioCirculo = false;
+                    statusBar1.setText("Mensagem:");
+                }
+                else if (esperaCentroOval)
+                {
+                    // primeiro clique: centro da elipse
+                    p1.setX(e.getX());
+                    p1.setY(e.getY());
+                    p1.setCor(corAtual);
+
+                    esperaCentroOval = false;
+                    esperaRaioAOval = true;
+                    statusBar1.setText("Mensagem: clique em um ponto para definir raio A (horizontal):");
+                }
+                else if (esperaRaioAOval)
+                {
+                    // segundo clique: define o raioA (horizontal)
+                    raioAux = Math.abs(e.getX() - p1.getX());
+
+                    esperaRaioAOval = false;
+                    esperaRaioBOval = true;
+                    statusBar1.setText("Mensagem: clique em um ponto para definir raio B (vertical):");
+                }
+                else if (esperaRaioBOval)
+                {
+                    // terceiro clique: define o raioB (vertical) e desenha a oval
+                    int raioB = Math.abs(e.getY() - p1.getY());
+
+                    Oval o = new Oval(p1, raioAux, raioB, corAtual);
+                    figuras.incluirNoFinal(o);
+                    o.desenhar(corAtual, pnlDesenho.getGraphics());
+                    pnlDesenho.repaint();
+
+                    esperaRaioBOval = false;
+                    statusBar1.setText("Mensagem:");
+                }
         }
         public void mouseEntered (MouseEvent e) {
 // não faz nada por enquanto

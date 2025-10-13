@@ -19,13 +19,48 @@ public class ManterFiguras implements ManterDados<Ponto>
         posicaoAtual = -1;  // não visita nenhuma posição ainda
     }
 
+
+
+
     @Override
     public void lerDados(String nomeArquivo) throws FileNotFoundException, Exception
     {
-        // a leitura será feita pela aplicação, que detectará qual o tipo
-        // específico de cada figura geomátrica lida, e instanciará uma
-        // figura do tipo específico para ser lida do arquivo (ponto, linha,
-        // circulo, oval, etc.)
+        java.util.Scanner sc = new java.util.Scanner(new java.io.File(nomeArquivo));
+        quantosDados = 0; // reset
+        while (sc.hasNextLine()) {
+            String linha = sc.nextLine().trim();
+            if (linha.isEmpty()) continue;
+            String[] campos = linha.split(";");
+            String tipo = campos[0].trim();
+            int xBase = Integer.parseInt(campos[1].trim());
+            int yBase = Integer.parseInt(campos[2].trim());
+            int corR  = Integer.parseInt(campos[3].trim());
+            int corG  = Integer.parseInt(campos[4].trim());
+            int corB  = Integer.parseInt(campos[5].trim());
+            java.awt.Color cor = new java.awt.Color(corR, corG, corB);
+            switch (tipo) {
+                case "p" :
+                    incluirNoFinal(new Ponto(xBase, yBase, cor));
+                    break;
+                case "l" :
+                    int xFinal = Integer.parseInt(campos[6].trim());
+                    int yFinal = Integer.parseInt(campos[7].trim());
+                    incluirNoFinal(new Linha(xBase, yBase, xFinal, yFinal, cor));
+                    break;
+                case "c" :
+                    int raio = Integer.parseInt(campos[6].trim());
+                    incluirNoFinal(new Circulo(xBase, yBase, raio, cor));
+                    break;
+                case "o" :
+                    int raioA = Integer.parseInt(campos[6].trim());
+                    int raioB = Integer.parseInt(campos[7].trim());
+                    incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
+                    break;
+                default:
+                    // ignorar linhas desconhecidas
+            }
+        }
+        sc.close();
     }
 
     @Override
@@ -55,7 +90,11 @@ public class ManterFiguras implements ManterDados<Ponto>
 
     public void expandirVetor()
     {
-
+        int novoTam = dados.length * 2;
+        Ponto[] novo = new Ponto[novoTam];
+        for (int i = 0; i < quantosDados; i++)
+            novo[i] = dados[i];
+        dados = novo;
     }
 
     @Override
