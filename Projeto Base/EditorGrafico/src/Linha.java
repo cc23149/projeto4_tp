@@ -26,9 +26,8 @@ public class Linha extends Ponto
     {
         g.setColor(corDesenho);
         g.drawLine(super.x, super.y,            // ponto inicial da linha
-                   pontoFinal.x, pontoFinal.y); // ponto final da linha
+                pontoFinal.x, pontoFinal.y); // ponto final da linha
     }
-
 
     public String formatoDeArquivo() {
         //   l		x1	y1	corR	corG	corB 	x2	y2
@@ -37,4 +36,58 @@ public class Linha extends Ponto
                 ";"+pontoFinal.x+";"+pontoFinal.y;
     }
 
+    // ============================================================
+    // 🔹 MÉTODOS ADICIONADOS PARA APRIMORAR A CLASSE
+    // ============================================================
+
+    // Getter e Setter do ponto final
+    public Ponto getPontoFinal() {
+        return pontoFinal;
+    }
+
+    public void setPontoFinal(Ponto p) {
+        this.pontoFinal = p;
+    }
+
+    // Métodos auxiliares de formatação (iguais ao modelo do professor)
+    private String transformaString(int valor, int posicoes) {
+        String s = String.valueOf(valor);
+        while (s.length() < posicoes)
+            s = "0" + s;
+        return s.substring(0, posicoes);
+    }
+
+    private String transformaString(String valor, int posicoes) {
+        String s = valor;
+        while (s.length() < posicoes)
+            s = s + " ";
+        return s.substring(0, posicoes);
+    }
+
+    // Método toString padronizado para gravação em arquivo (colunas fixas)
+    @Override
+    public String toString() {
+        return transformaString("l",5) +
+                transformaString(getX(),5) +
+                transformaString(getY(),5) +
+                transformaString(getCor().getRed(),5) +
+                transformaString(getCor().getGreen(),5) +
+                transformaString(getCor().getBlue(),5) +
+                transformaString(pontoFinal.getX(),5) +
+                transformaString(pontoFinal.getY(),5);
+    }
+
+    // Método para mover toda a linha (ambos os pontos)
+    public void mover(int deltaX, int deltaY) {
+        this.x += deltaX;
+        this.y += deltaY;
+        this.pontoFinal.mover(deltaX, deltaY);
+    }
+
+    // Método que calcula o comprimento da linha (útil para validações)
+    public double comprimento() {
+        int dx = pontoFinal.getX() - x;
+        int dy = pontoFinal.getY() - y;
+        return Math.sqrt(dx*dx + dy*dy);
+    }
 }

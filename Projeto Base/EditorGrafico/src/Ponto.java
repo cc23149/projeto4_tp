@@ -34,4 +34,48 @@ public class Ponto
         return "p;" + x + ";" + y + ";" +
                 cor.getRed() + ";" + cor.getGreen() + ";" + cor.getBlue();
     }
+
+   //===========================Métodos para o projeto=============================
+
+    // Sobrecarga para desenhar usando a própria cor do ponto
+    public void desenhar(Graphics g) {
+        desenhar(this.cor, g);
+    }
+
+    // Métodos auxiliares (iguais ao modelo do professor)
+    public String transformaString(int valor, int quantasPosicoes) {
+        String cadeia = String.valueOf(valor);
+        while (cadeia.length() < quantasPosicoes)
+            cadeia = "0" + cadeia;
+        return cadeia.substring(0, quantasPosicoes);
+    }
+
+    public String transformaString(String valor, int quantasPosicoes) {
+        String cadeia = valor;
+        while (cadeia.length() < quantasPosicoes)
+            cadeia = cadeia + " ";
+        return cadeia.substring(0, quantasPosicoes);
+    }
+
+    // Método toString padronizado para gravação em arquivo (colunas fixas)
+    @Override
+    public String toString() {
+        return transformaString("p",5) +
+                transformaString(getX(),5) +
+                transformaString(getY(),5) +
+                transformaString(getCor().getRed(),5) +
+                transformaString(getCor().getGreen(),5) +
+                transformaString(getCor().getBlue(),5);
+    }
+
+    // Método utilitário para mover o ponto (usado em figuras com deslocamento)
+    public void mover(int deltaX, int deltaY) {
+        this.x += deltaX;
+        this.y += deltaY;
+    }
+
+    // Método para comparar igualdade geométrica (útil para seleção de figuras)
+    public boolean mesmoLocal(Ponto outro) {
+        return this.x == outro.x && this.y == outro.y;
+    }
 }

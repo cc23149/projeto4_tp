@@ -11,30 +11,26 @@ public class Editor extends JFrame
     static private MeuJPanel pnlDesenho;
     private static ManterFiguras figuras;     // objeto de manutenção de vetor de figuras geométricas
 
-
     //========== do projeto =========
     // flags adicionais para circulo/oval
     static boolean esperaCentroCirculo = false, esperaRaioCirculo = false;
     static boolean esperaCentroOval = false, esperaRaioAOval = false, esperaRaioBOval = false;
-
-
+    static int raioAux; // usado para armazenar o raioA temporariamente durante o desenho da elipse
 
     private static JLabel statusBar1, statusBar2;
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
     private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnCor, btnAbrir,
-            btnSalvar,btnApagar, btnSair;
+            btnSalvar, btnApagar, btnSair;
 
     private JPanel pnlBotoes;   // container dos botões
-
     static private JInternalFrame janelaFilha;
 
-    public Editor()	// construtor de Editor que criará o JFrame, colocará seu
-    {			          // título, estabelecerá um tamanho para o formulário e o
-                    // exibirá
-        super("Editor Gráfico");	      // cria o JFrame e coloca um título
+    public Editor()
+    {
+        super("Editor Gráfico"); // cria o JFrame e coloca um título
 
-        figuras = new ManterFiguras(100);      // cria objeto de manutenção de vetor de figuras geométricas
+        figuras = new ManterFiguras(100); // cria objeto de manutenção de vetor de figuras geométricas
 
         Icon imgAbrir = new ImageIcon("botoes\\abrir.jpg");
         btnAbrir = new JButton("Abrir", imgAbrir);
@@ -47,15 +43,10 @@ public class Editor extends JFrame
         btnApagar = new JButton("Apagar", new ImageIcon("botoes\\apagar.jpg"));
         btnSair = new JButton("Sair", new ImageIcon("botoes\\sair.jpg"));
 
-        // cria o JPanel que armazenará os botões
         pnlBotoes = new JPanel();
-        // cria o layout usado para dispor fisicamente os botões no JPanel
         FlowLayout flwBotoes = new FlowLayout();
-        // informa que os componentes do pnlBotoes serão dispostos em forma livre
         pnlBotoes.setLayout(flwBotoes);
 
-        // adiciona os controles visuais (botões) ao painel de botões, de cima
-        // para baixo, da esquerda para direita.
         pnlBotoes.add(btnAbrir);
         pnlBotoes.add(btnSalvar);
         pnlBotoes.add(btnPonto);
@@ -66,53 +57,44 @@ public class Editor extends JFrame
         pnlBotoes.add(btnApagar);
         pnlBotoes.add(btnSair);
 
-        // associação de tratadores de eventos aos botões
         btnAbrir.addActionListener(new FazAbertura());
         btnSalvar.addActionListener(new FazSalvar());
-        btnPonto.addActionListener(new DesenhaPonto());  // dá inicio ao fornecimento de um Ponto
-        btnLinha.addActionListener(new DesenhaLinha());  // dá inicio ao fornecimento de uma Linha
-
-        //========= novo do projeto =============
+        btnPonto.addActionListener(new DesenhaPonto());
+        btnLinha.addActionListener(new DesenhaLinha());
         btnCirculo.addActionListener(new DesenhaCirculo());
         btnElipse.addActionListener(new DesenhaElipse());
         btnCor.addActionListener(new EscolheCor());
         btnApagar.addActionListener(new ApagarTudo());
+        btnSair.addActionListener(new SairDoPrograma());
 
-
-        Container cntForm = getContentPane(); // acessa o painel de conteúdo do JFrame
-        cntForm.setLayout(new BorderLayout());  // COnfigura layout do JFrame para Border
-        cntForm.add(pnlBotoes , BorderLayout.NORTH);    // coloca JPanel no topo do Layout
+        Container cntForm = getContentPane();
+        cntForm.setLayout(new BorderLayout());
+        cntForm.add(pnlBotoes , BorderLayout.NORTH);
 
         JDesktopPane panDesenho = new JDesktopPane();
         cntForm.add(panDesenho);
 
-        // cria uma janela interna (janela filha) no modelo MDI
         janelaFilha = new JInternalFrame("Nenhum arquivo aberto", true, true, true, true);
         panDesenho.add(janelaFilha);
 
-        // exibe o formulário
-        setSize(700,500);			// dimensões do formulário em pixels
+        setSize(700,500);
         setVisible(true);
 
         janelaFilha.setOpaque(true);
-        // dimensiona a janela filha e a exibe
         janelaFilha.setSize(this.getWidth()/2, this.getHeight() / 2);
         janelaFilha.show();
 
         pnlDesenho = new MeuJPanel();
-        Container cntFrame = janelaFilha.getContentPane();  // área de desenho da janela filha
-        cntFrame.add(pnlDesenho);   // adiciona o JPanel à área de desenho da janela filha
+        Container cntFrame = janelaFilha.getContentPane();
+        cntFrame.add(pnlDesenho);
     }
 
     public static void main(String[] args)
     {
         Editor aplicacao = new Editor();
 
-        // ouvinte de eventos sobre janelas, implementando
-        // o tratador de evento WindowClosing(), que trata
-        // do que fazer quando a janela for fechada
-        aplicacao.addWindowListener (
-                new WindowAdapter() {   //  cria instância da interface
+        aplicacao.addWindowListener(
+                new WindowAdapter() {
                     public void windowClosing(WindowEvent e){
                         System.exit(0);
                     }
@@ -125,8 +107,6 @@ public class Editor extends JFrame
         pnlDesenho.paintComponent(g);
     }
 
-    //========= do projeto  ========
-    //add outras variaveis
     private void limparEsperas()
     {
         esperaPonto = false;
@@ -139,30 +119,25 @@ public class Editor extends JFrame
         esperaRaioBOval = false;
     }
 
-
     private class FazAbertura implements ActionListener {
-        public void actionPerformed(ActionEvent e)	// código executado no evento
+        public void actionPerformed(ActionEvent e)
         {
             JFileChooser arqEscolhido = new JFileChooser ();
             arqEscolhido.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
             int result = arqEscolhido.showOpenDialog(Editor.this);
 
-            //código de verificação se um arquivo foi selecionado e obter seu nome
             if (result == JFileChooser.APPROVE_OPTION)
             {
                 File arquivo = arqEscolhido.getSelectedFile();
-                System.out.println("Processando "+arquivo.getName());
                 try {
                     Scanner arqFiguras = new Scanner(new File(arquivo.getName()));
                     try {
-
-                        while (arqFiguras.hasNextLine())  // enquanto não acabou o arquivo
+                        while (arqFiguras.hasNextLine())
                         {
-                            String linha = arqFiguras.nextLine();   // lemos a próxima linha do arquivo
-                            String[] campos = linha.split(";");  // cria vetor de strings com os dados separados por ";"
+                            String linha = arqFiguras.nextLine();
+                            String[] campos = linha.split(";");
 
-                            // abaixo separamos os 6 valores comuns a todas as figuras geométricas
                             String tipo = campos[0].trim();
                             int xBase = Integer.parseInt(campos[1].trim());
                             int yBase = Integer.parseInt(campos[2].trim());
@@ -172,19 +147,19 @@ public class Editor extends JFrame
                             Color cor = new Color(corR, corG, corB);
                             switch (tipo)
                             {
-                                case "p" : // figura é um ponto
+                                case "p" :
                                     figuras.incluirNoFinal(new Ponto(xBase, yBase, cor));
                                     break;
-                                case "l" : // figura é uma linha
+                                case "l" :
                                     int xFinal = Integer.parseInt(campos[6].trim());
                                     int yFinal = Integer.parseInt(campos[7].trim());
                                     figuras.incluirNoFinal(new Linha(xBase, yBase, xFinal, yFinal, cor));
                                     break;
-                                case "c" : // figura é um círculo
+                                case "c" :
                                     int raio = Integer.parseInt(campos[6].trim());
                                     figuras.incluirNoFinal(new Circulo(xBase, yBase, raio, cor));
                                     break;
-                                case "o" : // figura é uma oval
+                                case "o" :
                                     int raioA = Integer.parseInt(campos[6].trim());
                                     int raioB = Integer.parseInt(campos[7].trim());
                                     figuras.incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
@@ -192,7 +167,6 @@ public class Editor extends JFrame
                             }
                         }
                         arqFiguras.close();
-
                         janelaFilha.setTitle(arquivo.getName());
                         desenharObjetos(pnlDesenho.getGraphics());
                     }
@@ -202,20 +176,18 @@ public class Editor extends JFrame
                 } catch (FileNotFoundException ex) {
                     throw new RuntimeException(ex);
                 }
-
             }
         }
     }
 
     private class FazSalvar implements ActionListener {
-        public void actionPerformed(ActionEvent e)  // código executado no evento
+        public void actionPerformed(ActionEvent e)
         {
             JFileChooser arqEscolhido = new JFileChooser ();
             arqEscolhido.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
             int result = arqEscolhido.showSaveDialog(Editor.this);
 
-            //código de verificação se um arquivo foi selecionado e obter seu nome
             if (result == JFileChooser.APPROVE_OPTION) {
                 try {
                     figuras.gravarDados(arqEscolhido.getSelectedFile().getName());
@@ -244,7 +216,6 @@ public class Editor extends JFrame
         }
     }
 
-    //============== classes do projeto ============
     private class DesenhaCirculo implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             statusBar1.setText("Mensagem: clique no centro do círculo:");
@@ -273,45 +244,51 @@ public class Editor extends JFrame
 
     private class ApagarTudo implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            // esvaziar vetor e repintar
-            figuras = new ManterFiguras(100); // re-cria o objeto
+            figuras = new ManterFiguras(100);
             pnlDesenho.repaint();
             statusBar1.setText("Mensagem: área limpa.");
         }
     }
 
+    private class SairDoPrograma implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            int resposta = JOptionPane.showConfirmDialog(
+                    Editor.this,
+                    "Deseja realmente sair?",
+                    "Confirmação",
+                    JOptionPane.YES_NO_OPTION
+            );
 
+            if (resposta == JOptionPane.YES_OPTION)
+                System.exit(0);
+        }
+    }
 
     private class MeuJPanel extends JPanel implements MouseListener, MouseMotionListener
     {
-        JPanel pnlStatus = new JPanel();        // barra de status
+        JPanel pnlStatus = new JPanel();
 
         public MeuJPanel() {
             super();
-            pnlStatus.setLayout(new GridLayout(1, 2)); // painel com 2 colunas
+            pnlStatus.setLayout(new GridLayout(1, 2));
             statusBar1 = new JLabel("Mensagem");
             statusBar2 = new JLabel("Coordenada");
-            pnlStatus.add(statusBar1); // label na coluna da esquerda
-            pnlStatus.add(statusBar2); // label na coluna da direita
-            getContentPane().add(pnlStatus, BorderLayout.SOUTH); // status no fundo do formulário
-            addMouseListener(this);         // esta classe “ouve” cliques do mouse
-            addMouseMotionListener(this);   // e “ouve” também seus movimentos
+            pnlStatus.add(statusBar1);
+            pnlStatus.add(statusBar2);
+            getContentPane().add(pnlStatus, BorderLayout.SOUTH);
+            addMouseListener(this);
+            addMouseMotionListener(this);
         }
 
         public void mouseMoved(MouseEvent e) {
             statusBar2.setText("Coordenada: "+e.getX()+","+e.getY());
         }
-        public void mouseDragged(MouseEvent e) {
-// não faz nada por enquanto
-        }
+        public void mouseDragged(MouseEvent e) {}
 
         public void mouseClicked (MouseEvent e) {
             statusBar1.setText("Mensagem:");
         }
 
-        // o método abaixo é chamado automaticamente quando o usuário
-        // pressiona o botão esquerdo do mouse sobre o pnlDesenho ( instãncia
-        // de MeuJPanel)
         public void mousePressed (MouseEvent e)
         {
             if (esperaPonto)
@@ -321,103 +298,82 @@ public class Editor extends JFrame
                 novoPonto.desenhar(novoPonto.getCor(), pnlDesenho.getGraphics());
                 esperaPonto = false;
             }
-            else
-                if (esperaInicioLinha)
-                {
-                    // guarda em p1 o 1o ponto da Linha
-                    p1.setX(e.getX());
-                    p1.setY(e.getY());
-                    p1.setCor(corAtual);
-                    // ainda não podemos guardar uma Linha no vetor, pois
-                    // não temos o 2o ponto extremo da mesma
-                    esperaInicioLinha = false;
-                    esperaFimLinha = true; // entra no modo de pedir o 2o ponto
-                    statusBar1.setText("Clique no ponto final da linha:");
-                }
-                else
-                    if (esperaFimLinha)
-                    {
-                        Ponto pontoFinal = new Ponto(e.getX(), e.getY(), corAtual);
-                        Linha novaLinha = new Linha(p1, pontoFinal, corAtual);
-                        figuras.incluirNoFinal(novaLinha);
-                        novaLinha.desenhar(corAtual, pnlDesenho.getGraphics());
-                        esperaFimLinha = false;  // linha terminada e incluída
-                    }
+            else if (esperaInicioLinha)
+            {
+                p1.setX(e.getX());
+                p1.setY(e.getY());
+                p1.setCor(corAtual);
+                esperaInicioLinha = false;
+                esperaFimLinha = true;
+                statusBar1.setText("Clique no ponto final da linha:");
+            }
+            else if (esperaFimLinha)
+            {
+                Ponto pontoFinal = new Ponto(e.getX(), e.getY(), corAtual);
+                Linha novaLinha = new Linha(p1, pontoFinal, corAtual);
+                figuras.incluirNoFinal(novaLinha);
+                novaLinha.desenhar(corAtual, pnlDesenho.getGraphics());
+                esperaFimLinha = false;
+            }
 
-
-                //============= Do Projeto ===========
-                else if (esperaCentroCirculo)
-                {
-                    // guarda o centro do círculo
-                    p1.setX(e.getX());
-                    p1.setY(e.getY());
-                    p1.setCor(corAtual);
-
-                    esperaCentroCirculo = false;
-                    esperaRaioCirculo = true;
-                    statusBar1.setText("Mensagem: clique em um ponto da circunferência (para definir o raio):");
-                }
-                else if (esperaRaioCirculo)
-                {
-                    // calcula o raio com base na distância entre o centro e o clique
-                    int dx = e.getX() - p1.getX();
-                    int dy = e.getY() - p1.getY();
-                    int raio = (int)Math.sqrt(dx*dx + dy*dy);
-
-                    Circulo c = new Circulo(p1, raio, corAtual);
-                    figuras.incluirNoFinal(c);
-                    c.desenhar(corAtual, pnlDesenho.getGraphics());
-                    pnlDesenho.repaint();
-
-                    esperaRaioCirculo = false;
-                    statusBar1.setText("Mensagem:");
-                }
-                else if (esperaCentroOval)
-                {
-                    // primeiro clique: centro da elipse
-                    p1.setX(e.getX());
-                    p1.setY(e.getY());
-                    p1.setCor(corAtual);
-
-                    esperaCentroOval = false;
-                    esperaRaioAOval = true;
-                    statusBar1.setText("Mensagem: clique em um ponto para definir raio A (horizontal):");
-                }
-                else if (esperaRaioAOval)
-                {
-                    // segundo clique: define o raioA (horizontal)
-                    raioAux = Math.abs(e.getX() - p1.getX());
-
-                    esperaRaioAOval = false;
-                    esperaRaioBOval = true;
-                    statusBar1.setText("Mensagem: clique em um ponto para definir raio B (vertical):");
-                }
-                else if (esperaRaioBOval)
-                {
-                    // terceiro clique: define o raioB (vertical) e desenha a oval
-                    int raioB = Math.abs(e.getY() - p1.getY());
-
-                    Oval o = new Oval(p1, raioAux, raioB, corAtual);
-                    figuras.incluirNoFinal(o);
-                    o.desenhar(corAtual, pnlDesenho.getGraphics());
-                    pnlDesenho.repaint();
-
-                    esperaRaioBOval = false;
-                    statusBar1.setText("Mensagem:");
-                }
+            //============= Do Projeto ===========
+            else if (esperaCentroCirculo)
+            {
+                p1.setX(e.getX());
+                p1.setY(e.getY());
+                p1.setCor(corAtual);
+                esperaCentroCirculo = false;
+                esperaRaioCirculo = true;
+                statusBar1.setText("Mensagem: clique em um ponto da circunferência (para definir o raio):");
+            }
+            else if (esperaRaioCirculo)
+            {
+                int dx = e.getX() - p1.getX();
+                int dy = e.getY() - p1.getY();
+                int raio = (int)Math.sqrt(dx*dx + dy*dy);
+                Circulo c = new Circulo(p1, raio, corAtual);
+                figuras.incluirNoFinal(c);
+                c.desenhar(corAtual, pnlDesenho.getGraphics());
+                pnlDesenho.repaint();
+                esperaRaioCirculo = false;
+                statusBar1.setText("Mensagem:");
+            }
+            else if (esperaCentroOval)
+            {
+                p1.setX(e.getX());
+                p1.setY(e.getY());
+                p1.setCor(corAtual);
+                esperaCentroOval = false;
+                esperaRaioAOval = true;
+                statusBar1.setText("Mensagem: clique em um ponto para definir raio A (horizontal):");
+            }
+            else if (esperaRaioAOval)
+            {
+                raioAux = Math.abs(e.getX() - p1.getX());
+                esperaRaioAOval = false;
+                esperaRaioBOval = true;
+                statusBar1.setText("Mensagem: clique em um ponto para definir raio B (vertical):");
+            }
+            else if (esperaRaioBOval)
+            {
+                int raioB = Math.abs(e.getY() - p1.getY());
+                Oval o = new Oval(p1, raioAux, raioB, corAtual);
+                figuras.incluirNoFinal(o);
+                o.desenhar(corAtual, pnlDesenho.getGraphics());
+                pnlDesenho.repaint();
+                esperaRaioBOval = false;
+                statusBar1.setText("Mensagem:");
+            }
         }
-        public void mouseEntered (MouseEvent e) {
-// não faz nada por enquanto
-        }
-        public void mouseExited (MouseEvent e) {
-// não faz nada por enquanto
-        }
-        public void mouseReleased (MouseEvent e) {
-// não faz nada por enquanto
-        }
+
+        public void mouseEntered (MouseEvent e) {}
+        public void mouseExited (MouseEvent e) {}
+        public void mouseReleased (MouseEvent e) {}
 
         public void paintComponent(Graphics g)
         {
+            super.paintComponent(g); // limpa o fundo antes de redesenhar
+
             for (int atual = 0; atual < figuras.getTamanho(); atual++)
             {
                 Ponto figuraAtual = figuras.valorDe(atual);
@@ -425,5 +381,4 @@ public class Editor extends JFrame
             }
         }
     }
-
 }
