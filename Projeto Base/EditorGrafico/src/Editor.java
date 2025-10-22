@@ -4,6 +4,8 @@ import java.io.*;
 import java.util.Scanner;
 import javax.swing.*;
 
+import java.util.ArrayList;
+
 public class Editor extends JFrame
 {
     static Color corAtual = Color.black;
@@ -33,6 +35,12 @@ public class Editor extends JFrame
     static boolean modoSelecao = false;
     static Ponto figuraSelecionada = null;
 
+    // Movimento e arraste de figuras
+    static boolean movendoFigura = false;
+    static int xAnterior, yAnterior;
+
+    // ======= ADIÇÃO: Vetor de figuras selecionadas =======
+    static ArrayList<Integer> figurasSelecionadas = new ArrayList<Integer>();
 
 
     private static JLabel statusBar1, statusBar2;
@@ -308,10 +316,32 @@ public class Editor extends JFrame
             Color nova = JColorChooser.showDialog(Editor.this, "Escolha a cor", corAtual);
             if (nova != null) {
                 corAtual = nova;
-                statusBar1.setText("Mensagem: cor atual atualizada.");
+
+                // ======= ADIÇÃO =======
+                // Se há várias figuras selecionadas
+                if (!figurasSelecionadas.isEmpty()) {
+                    for (int i : figurasSelecionadas) {
+                        Ponto f = figuras.valorDe(i);
+                        f.setCor(nova);
+                    }
+                    pnlDesenho.repaint();
+                    statusBar1.setText("Mensagem: cor das figuras selecionadas alterada.");
+                }
+                // Caso tenha apenas uma figura selecionada diretamente
+                else if (figuraSelecionada != null) {
+                    figuraSelecionada.setCor(nova);
+                    pnlDesenho.repaint();
+                    statusBar1.setText("Mensagem: cor da figura selecionada alterada.");
+                }
+                // Caso nenhuma figura esteja selecionada
+                else {
+                    statusBar1.setText("Mensagem: cor atual atualizada (para novas figuras).");
+                }
             }
         }
     }
+
+
 
     private class ApagarTudo implements ActionListener {
         public void actionPerformed(ActionEvent e) {
@@ -354,7 +384,47 @@ public class Editor extends JFrame
         public void mouseMoved(MouseEvent e) {
             statusBar2.setText("Coordenada: "+e.getX()+","+e.getY());
         }
-        public void mouseDragged(MouseEvent e) {}
+
+
+        public void mouseDragged(MouseEvent e) {
+            if (figuraSelecionada != null) {
+                int dx = e.getX() - xAnterior;
+                int dy = e.getY() - yAnterior;
+
+                // Atualiza posição conforme o tipo
+                if (figuraSelecionada instanceof Ponto) {
+                    figuraSelecionada.setX(figuraSelecionada.getX() + dx);
+                    figuraSelecionada.setY(figuraSelecionada.getY() + dy);
+                }
+                else if (figuraSelecionada instanceof Linha) {
+                    Linha l = (Linha) figuraSelecionada;
+                    l.setX(l.getX() + dx);
+                    l.setY(l.getY() + dy);
+                    l.pontoFinal.setX(l.pontoFinal.getX() + dx);
+                    l.pontoFinal.setY(l.pontoFinal.getY() + dy);
+                }
+                else if (figuraSelecionada instanceof Circulo ||
+                        figuraSelecionada instanceof Oval ||
+                        figuraSelecionada instanceof Retangulo) {
+                    figuraSelecionada.setX(figuraSelecionada.getX() + dx);
+                    figuraSelecionada.setY(figuraSelecionada.getY() + dy);
+                }
+                else if (figuraSelecionada instanceof Polilinha) {
+                    Polilinha pl = (Polilinha) figuraSelecionada;
+                    for (int i = 0; i < pl.getQtdPontos(); i++) {
+                        Ponto p = pl.getPontos().get(i);
+                        p.setX(p.getX() + dx);
+                        p.setY(p.getY() + dy);
+                    }
+                }
+
+                xAnterior = e.getX();
+                yAnterior = e.getY();
+                pnlDesenho.repaint();
+                statusBar1.setText("Mensagem: movendo figura selecionada...");
+            }
+        }
+
 
         public void mouseClicked (MouseEvent e) {
             statusBar1.setText("Mensagem:");
@@ -362,6 +432,14 @@ public class Editor extends JFrame
 
         public void mousePressed (MouseEvent e)
         {
+            // ===== ADIÇÃO =====
+            xAnterior = e.getX();
+            yAnterior = e.getY();
+
+            if (figuraSelecionada != null) {
+                movendoFigura = true; // inicia movimento se já havia figura selecionada
+            }
+
             if (modoSelecao)
             {
                 figuraSelecionada = null;
@@ -460,6 +538,14 @@ public class Editor extends JFrame
 
                 modoSelecao = false;
                 return; // impede que o clique prossiga para desenho
+            }
+
+            // ===== ADIÇÃO =====
+            // se clicar fora de qualquer modo e havia uma figura selecionada, desmarca
+            if (!modoSelecao && figuraSelecionada != null && !SwingUtilities.isRightMouseButton(e)) {
+                figuraSelecionada = null;
+                pnlDesenho.repaint();
+                statusBar1.setText("Mensagem: nenhuma figura selecionada.");
             }
 
             if (esperaPonto)
@@ -586,9 +672,17 @@ public class Editor extends JFrame
             }
         }
 
+
         public void mouseEntered (MouseEvent e) {}
         public void mouseExited (MouseEvent e) {}
-        public void mouseReleased (MouseEvent e) {}
+
+        public void mouseReleased (MouseEvent e) {
+            if (movendoFigura) {
+                movendoFigura = false;
+                statusBar1.setText("Mensagem: movimento concluído.");
+            }
+        }
+
 
         public void paintComponent(Graphics g)
         {
