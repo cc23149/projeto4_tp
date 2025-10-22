@@ -19,58 +19,53 @@ public class ManterFiguras implements ManterDados<Ponto>
         posicaoAtual = -1;  // não visita nenhuma posição ainda
     }
 
-
-
-
     @Override
     public void lerDados(String nomeArquivo) throws FileNotFoundException, Exception
     {
-        java.util.Scanner sc = new java.util.Scanner(new java.io.File(nomeArquivo));
-        quantosDados = 0; // reset
-        while (sc.hasNextLine()) {
-            String linha = sc.nextLine().trim();
-            if (linha.isEmpty()) continue;
-            String[] campos = linha.split(";");
-            String tipo = campos[0].trim();
-            int xBase = Integer.parseInt(campos[1].trim());
-            int yBase = Integer.parseInt(campos[2].trim());
-            int corR  = Integer.parseInt(campos[3].trim());
-            int corG  = Integer.parseInt(campos[4].trim());
-            int corB  = Integer.parseInt(campos[5].trim());
-            java.awt.Color cor = new java.awt.Color(corR, corG, corB);
-            switch (tipo) {
-                case "p" :
-                    incluirNoFinal(new Ponto(xBase, yBase, cor));
-                    break;
-                case "l" :
-                    int xFinal = Integer.parseInt(campos[6].trim());
-                    int yFinal = Integer.parseInt(campos[7].trim());
-                    incluirNoFinal(new Linha(xBase, yBase, xFinal, yFinal, cor));
-                    break;
-                case "c" :
-                    int raio = Integer.parseInt(campos[6].trim());
-                    incluirNoFinal(new Circulo(xBase, yBase, raio, cor));
-                    break;
-                case "o" :
-                    int raioA = Integer.parseInt(campos[6].trim());
-                    int raioB = Integer.parseInt(campos[7].trim());
-                    incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
-                    break;
-                default:
-                    // ignorar linhas desconhecidas
+        try (java.util.Scanner sc = new java.util.Scanner(new java.io.File(nomeArquivo))) {
+            quantosDados = 0; // reset
+            while (sc.hasNextLine()) {
+                String linha = sc.nextLine().trim();
+                if (linha.isEmpty()) continue;
+                String[] campos = linha.split(";");
+                String tipo = campos[0].trim();
+                int xBase = Integer.parseInt(campos[1].trim());
+                int yBase = Integer.parseInt(campos[2].trim());
+                int corR  = Integer.parseInt(campos[3].trim());
+                int corG  = Integer.parseInt(campos[4].trim());
+                int corB  = Integer.parseInt(campos[5].trim());
+                java.awt.Color cor = new java.awt.Color(corR, corG, corB);
+                switch (tipo) {
+                    case "p":
+                        incluirNoFinal(new Ponto(xBase, yBase, cor));
+                        break;
+                    case "l":
+                        int xFinal = Integer.parseInt(campos[6].trim());
+                        int yFinal = Integer.parseInt(campos[7].trim());
+                        incluirNoFinal(new Linha(xBase, yBase, xFinal, yFinal, cor));
+                        break;
+                    case "c":
+                        int raio = Integer.parseInt(campos[6].trim());
+                        incluirNoFinal(new Circulo(xBase, yBase, raio, cor));
+                        break;
+                    case "o":
+                        int raioA = Integer.parseInt(campos[6].trim());
+                        int raioB = Integer.parseInt(campos[7].trim());
+                        incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
+                        break;
+                    case "r":
+                        int largura = Integer.parseInt(campos[6].trim());
+                        int altura = Integer.parseInt(campos[7].trim());
+                        incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
+                        break;
+                    default:
+                        System.out.println("Aviso: tipo desconhecido encontrado no arquivo: " + tipo);
+                }
             }
         }
-        sc.close();
     }
 
     @Override
-    // Uma maneira alternativa de gravar dados em arquivo texto é por meio da
-    // classe PrintWriter, que usa como parâmetro um FileWriter
-    // PrintWriter possui o método println que pula de linha após cada escrita.
-    // No caso abaixo, o método formatoDeArquivo deve gerar cada linha de dados
-    // separando os campos com ";", sem necessidade de manter tamanho fixo para
-    // cada campo e registro como vínhamos fazendo com arquivos texto (de tamanho fixo)
-    // desde o 1o semestre
     public void gravarDados(String nomeDeArquivo) throws IOException {
         PrintWriter pw = new PrintWriter(new FileWriter(nomeDeArquivo));
         for (int i = 0; i < quantosDados; i++) {
@@ -82,7 +77,7 @@ public class ManterFiguras implements ManterDados<Ponto>
     @Override
     public void incluirNoFinal(Ponto novoDado)
     {
-         if (quantosDados >= dados.length)
+        if (quantosDados >= dados.length)
             expandirVetor();        // aumenta tamanho físico do vetor
 
         dados[quantosDados++] = novoDado;
@@ -146,79 +141,25 @@ public class ManterFiguras implements ManterDados<Ponto>
     @Override
     public boolean existe(Ponto procurado)
     {
-        // pesquisa sequencial, pois as figuras geométricas não estarão
-        // ordenadas
         for (ondeEsta = 0; ondeEsta < quantosDados; ondeEsta++)
-            if (dados[ondeEsta].getX() == procurado.getX() &&  // mesmo X
-                dados[ondeEsta].getY() == procurado.getY() &&  // mesmo Y
-                dados[ondeEsta].getClass() == procurado.getClass()) // mesma classe (mesma figura)
-                return true;    // ondeEsta indexa a figura encontrada
-
+            if (dados[ondeEsta].getX() == procurado.getX() &&
+                    dados[ondeEsta].getY() == procurado.getY() &&
+                    dados[ondeEsta].getClass() == procurado.getClass())
+                return true;
         return false;
     }
 
-    public int getOnde() {
-        return ondeEsta;
-    }
-
-    public int getPosicaoAtual() {
-        return posicaoAtual;
-    }
-
-    @Override
-    public void ordenar() {
-        // não ordena nada no caso desta aplicação
-    }
-
-    @Override
-    public boolean estaVazio() {
-        return quantosDados == 0;
-    }
-
-    @Override
-    public Situacao getSituacao() {
-        return situacao;
-    }
-
-    @Override
-    public void setSituacao(Situacao novaSituacao) {
-        situacao = novaSituacao;
-    }
-
-    @Override
-    public int getTamanho() {
-        return quantosDados;
-    }
-
-    @Override
-    public boolean estaNoInicio() {
-        return posicaoAtual == 0;
-    }
-
-    @Override
-    public boolean estaNoFim() {
-        return posicaoAtual == quantosDados-1;
-    }
-
-    @Override
-    public void irAoInicio() {
-        posicaoAtual = 0;
-    }
-
-    @Override
-    public void irAoFim() {
-        posicaoAtual = quantosDados - 1;
-    }
-
-    @Override
-    public void irAoAnterior() {
-        if (posicaoAtual > 0)
-            posicaoAtual--;
-    }
-
-    @Override
-    public void irAoProximo() {
-        if (posicaoAtual < quantosDados - 1)
-            posicaoAtual++;
-    }
+    public int getOnde() { return ondeEsta; }
+    public int getPosicaoAtual() { return posicaoAtual; }
+    @Override public void ordenar() {}
+    @Override public boolean estaVazio() { return quantosDados == 0; }
+    @Override public Situacao getSituacao() { return situacao; }
+    @Override public void setSituacao(Situacao novaSituacao) { situacao = novaSituacao; }
+    @Override public int getTamanho() { return quantosDados; }
+    @Override public boolean estaNoInicio() { return posicaoAtual == 0; }
+    @Override public boolean estaNoFim() { return posicaoAtual == quantosDados-1; }
+    @Override public void irAoInicio() { posicaoAtual = 0; }
+    @Override public void irAoFim() { posicaoAtual = quantosDados - 1; }
+    @Override public void irAoAnterior() { if (posicaoAtual > 0) posicaoAtual--; }
+    @Override public void irAoProximo() { if (posicaoAtual < quantosDados - 1) posicaoAtual++; }
 }
