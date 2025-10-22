@@ -17,10 +17,15 @@ public class Editor extends JFrame
     static boolean esperaCentroOval = false, esperaRaioAOval = false, esperaRaioBOval = false;
     static int raioAux; // usado para armazenar o raioA temporariamente durante o desenho da elipse
 
+    //========== ADIÇÃO =========
+    // flags adicionais para retângulo
+    static boolean esperaCantoRetangulo = false, esperaDimensaoRetangulo = false;
+    static int xInicioRet, yInicioRet;
+
     private static JLabel statusBar1, statusBar2;
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
-    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnCor, btnAbrir,
+    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnCor, btnAbrir,
             btnSalvar, btnApagar, btnSair;
 
     private JPanel pnlBotoes;   // container dos botões
@@ -32,6 +37,10 @@ public class Editor extends JFrame
 
         figuras = new ManterFiguras(100); // cria objeto de manutenção de vetor de figuras geométricas
 
+        //Dei um jeito de ficar visualmente igual aos outros
+        int tamanhoIcone = 15;                                                                                                                      // Não sei se podia usar isso para ajustar o tamanho da imagem
+        Icon imgRet = new ImageIcon(new ImageIcon("botoes\\retangulo.jpg").getImage().getScaledInstance(tamanhoIcone, tamanhoIcone, Image.SCALE_SMOOTH));
+
         Icon imgAbrir = new ImageIcon("botoes\\abrir.jpg");
         btnAbrir = new JButton("Abrir", imgAbrir);
         btnSalvar = new JButton("Salvar", new ImageIcon("botoes\\salvar.jpg"));
@@ -39,6 +48,7 @@ public class Editor extends JFrame
         btnLinha = new JButton("Linha", new ImageIcon("botoes\\linha.jpg"));
         btnCirculo = new JButton("Circulo", new ImageIcon("botoes\\circulo.jpg"));
         btnElipse = new JButton("Elipse", new ImageIcon("botoes\\elipse.jpg"));
+        btnRetangulo = new JButton("Retangulo", imgRet);
         btnCor = new JButton("Cores", new ImageIcon("botoes\\cores.jpg"));
         btnApagar = new JButton("Apagar", new ImageIcon("botoes\\apagar.jpg"));
         btnSair = new JButton("Sair", new ImageIcon("botoes\\sair.jpg"));
@@ -53,6 +63,7 @@ public class Editor extends JFrame
         pnlBotoes.add(btnLinha);
         pnlBotoes.add(btnCirculo);
         pnlBotoes.add(btnElipse);
+        pnlBotoes.add(btnRetangulo); // do projeto
         pnlBotoes.add(btnCor);
         pnlBotoes.add(btnApagar);
         pnlBotoes.add(btnSair);
@@ -63,6 +74,7 @@ public class Editor extends JFrame
         btnLinha.addActionListener(new DesenhaLinha());
         btnCirculo.addActionListener(new DesenhaCirculo());
         btnElipse.addActionListener(new DesenhaElipse());
+        btnRetangulo.addActionListener(new DesenhaRetangulo()); // do projeto
         btnCor.addActionListener(new EscolheCor());
         btnApagar.addActionListener(new ApagarTudo());
         btnSair.addActionListener(new SairDoPrograma());
@@ -117,6 +129,8 @@ public class Editor extends JFrame
         esperaCentroOval = false;
         esperaRaioAOval = false;
         esperaRaioBOval = false;
+        esperaCantoRetangulo = false; // Do Projeto
+        esperaDimensaoRetangulo = false; // Do Projeto
     }
 
     private class FazAbertura implements ActionListener {
@@ -163,6 +177,11 @@ public class Editor extends JFrame
                                     int raioA = Integer.parseInt(campos[6].trim());
                                     int raioB = Integer.parseInt(campos[7].trim());
                                     figuras.incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
+                                    break;
+                                case "r" : // ADIÇÃO
+                                    int largura = Integer.parseInt(campos[6].trim());
+                                    int altura = Integer.parseInt(campos[7].trim());
+                                    figuras.incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
                                     break;
                             }
                         }
@@ -229,6 +248,15 @@ public class Editor extends JFrame
             statusBar1.setText("Mensagem: clique no centro da elipse:");
             limparEsperas();
             esperaCentroOval = true;
+        }
+    }
+
+    //============ ADIÇÃO DO RETÂNGULO ============
+    private class DesenhaRetangulo implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            statusBar1.setText("Mensagem: clique no canto superior esquerdo do retângulo:");
+            limparEsperas();
+            esperaCantoRetangulo = true;
         }
     }
 
@@ -316,7 +344,8 @@ public class Editor extends JFrame
                 esperaFimLinha = false;
             }
 
-            //============= Do Projeto ===========
+            //========== Do Projeto ===========
+
             else if (esperaCentroCirculo)
             {
                 p1.setX(e.getX());
@@ -362,6 +391,29 @@ public class Editor extends JFrame
                 o.desenhar(corAtual, pnlDesenho.getGraphics());
                 pnlDesenho.repaint();
                 esperaRaioBOval = false;
+                statusBar1.setText("Mensagem:");
+            }
+
+            //========= ADIÇÃO DO RETÂNGULO =========
+            else if (esperaCantoRetangulo)
+            {
+                xInicioRet = e.getX();
+                yInicioRet = e.getY();
+                esperaCantoRetangulo = false;
+                esperaDimensaoRetangulo = true;
+                statusBar1.setText("Mensagem: clique no canto oposto do retângulo:");
+            }
+            else if (esperaDimensaoRetangulo)
+            {
+                int largura = Math.abs(e.getX() - xInicioRet);
+                int altura = Math.abs(e.getY() - yInicioRet);
+                int xFinal = Math.min(e.getX(), xInicioRet);
+                int yFinal = Math.min(e.getY(), yInicioRet);
+                Retangulo r = new Retangulo(xFinal, yFinal, largura, altura, corAtual);
+                figuras.incluirNoFinal(r);
+                r.desenhar(corAtual, pnlDesenho.getGraphics());
+                pnlDesenho.repaint();
+                esperaDimensaoRetangulo = false;
                 statusBar1.setText("Mensagem:");
             }
         }
