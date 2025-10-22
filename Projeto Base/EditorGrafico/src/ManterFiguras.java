@@ -2,14 +2,12 @@ import java.io.*;
 
 public class ManterFiguras implements ManterDados<Ponto>
 {
-    // Declaração do vetor de Estudantes e demais atributos
-    // necessários para manutenção de vetores de Estudante
-
-    private Ponto[] dados;  // vetor onde instâncias de figuras serão armazenadas
-    private int quantosDados;   // tamanho lógico do vetor dados
-    private Situacao situacao;  // situação atual do programa
-    private int posicaoAtual;   // qual índice estamos visitando
-    private int ondeEsta;       // indica onde no vetor está o dado procurado ou onde deveria estar
+    // Declaração do vetor de figuras e demais atributos
+    private Ponto[] dados;              // vetor onde instâncias de figuras serão armazenadas
+    private int quantosDados;           // tamanho lógico do vetor dados
+    private Situacao situacao;          // situação atual do programa
+    private int posicaoAtual;           // qual índice estamos visitando
+    private int ondeEsta;               // indica onde no vetor está o dado procurado ou onde deveria estar
 
     public ManterFiguras(int tamanhoFisico)
     {
@@ -35,6 +33,7 @@ public class ManterFiguras implements ManterDados<Ponto>
                 int corG  = Integer.parseInt(campos[4].trim());
                 int corB  = Integer.parseInt(campos[5].trim());
                 java.awt.Color cor = new java.awt.Color(corR, corG, corB);
+
                 switch (tipo) {
                     case "p":
                         incluirNoFinal(new Ponto(xBase, yBase, cor));
@@ -58,6 +57,24 @@ public class ManterFiguras implements ManterDados<Ponto>
                         int altura = Integer.parseInt(campos[7].trim());
                         incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
                         break;
+
+                    //====================================================
+                    //             ADIÇÃO: leitura de Polilinha
+                    //====================================================
+                    case "pl":
+                        // formato: pl; corR; corG; corB; n; x1; y1; x2; y2; ... xn; yn
+                        java.awt.Color corPoli = new java.awt.Color(corR, corG, corB);
+                        int qtd = Integer.parseInt(campos[6].trim());
+                        Polilinha pl = new Polilinha(qtd, corPoli);
+                        int pos = 7;
+                        for (int i = 0; i < qtd; i++) {
+                            int x = Integer.parseInt(campos[pos++].trim());
+                            int y = Integer.parseInt(campos[pos++].trim());
+                            pl.adicionarPonto(new Ponto(x, y, corPoli));
+                        }
+                        incluirNoFinal(pl);
+                        break;
+
                     default:
                         System.out.println("Aviso: tipo desconhecido encontrado no arquivo: " + tipo);
                 }
