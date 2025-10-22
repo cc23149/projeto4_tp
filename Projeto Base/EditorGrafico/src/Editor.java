@@ -46,8 +46,9 @@ public class Editor extends JFrame
     private static JLabel statusBar1, statusBar2;
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
-    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnPolilinha,  btnSelecionar, btnCor, btnAbrir,
-            btnSalvar, btnApagar, btnSair;
+    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnPolilinha, btnCor, btnAbrir,
+            btnSalvar, btnApagar, btnSair, btnSelIndice, btnMover, btnApagarSelecionadas, btnLimparSelecao;
+
 
     private JPanel pnlBotoes;   // container dos botões
     static private JInternalFrame janelaFilha;
@@ -73,10 +74,15 @@ public class Editor extends JFrame
         btnElipse = new JButton("Elipse", new ImageIcon("botoes\\elipse.jpg"));
         btnRetangulo = new JButton("Retangulo", imgRet);
         btnPolilinha = new JButton("Polilinha", imgPoli);
-        btnSelecionar = new JButton("Selecionar", imgSel);
+        //btnSelecionar = new JButton("Selecionar", imgSel);
         btnCor = new JButton("Cores", new ImageIcon("botoes\\cores.jpg"));
         btnApagar = new JButton("Apagar", new ImageIcon("botoes\\apagar.jpg"));
         btnSair = new JButton("Sair", new ImageIcon("botoes\\sair.jpg"));
+
+        btnSelIndice = new JButton("Selecionar índice");
+        btnMover = new JButton("Mover (ΔX,ΔY)");
+        btnApagarSelecionadas = new JButton("Apagar Selecionadas");
+        btnLimparSelecao = new JButton("Limpar Seleção");
 
         pnlBotoes = new JPanel();
         FlowLayout flwBotoes = new FlowLayout();
@@ -90,10 +96,17 @@ public class Editor extends JFrame
         pnlBotoes.add(btnElipse);
         pnlBotoes.add(btnRetangulo);
         pnlBotoes.add(btnPolilinha);
-        pnlBotoes.add(btnSelecionar);
+        //pnlBotoes.add(btnSelecionar);
         pnlBotoes.add(btnCor);
         pnlBotoes.add(btnApagar);
         pnlBotoes.add(btnSair);
+
+        // ======= ADIÇÃO =======
+        pnlBotoes.add(btnSelIndice);
+        pnlBotoes.add(btnMover);
+        pnlBotoes.add(btnApagarSelecionadas);
+        pnlBotoes.add(btnLimparSelecao);
+
 
         btnAbrir.addActionListener(new FazAbertura());
         btnSalvar.addActionListener(new FazSalvar());
@@ -103,10 +116,17 @@ public class Editor extends JFrame
         btnElipse.addActionListener(new DesenhaElipse());
         btnRetangulo.addActionListener(new DesenhaRetangulo());
         btnPolilinha.addActionListener(new DesenhaPolilinha());
-        btnSelecionar.addActionListener(new SelecionarFigura());
+
         btnCor.addActionListener(new EscolheCor());
         btnApagar.addActionListener(new ApagarTudo());
         btnSair.addActionListener(new SairDoPrograma());
+
+        // ======= ADIÇÃO: listeners dos novos botões =======
+        btnSelIndice.addActionListener(new SelecionarPorIndice());
+        btnMover.addActionListener(new MoverSelecionadas());
+        btnApagarSelecionadas.addActionListener(new ApagarSelecionadas());
+        btnLimparSelecao.addActionListener(new LimparSelecao());
+
 
         Container cntForm = getContentPane();
         cntForm.setLayout(new BorderLayout());
@@ -249,11 +269,111 @@ public class Editor extends JFrame
     }
 
     //Seleção
-    private class SelecionarFigura implements ActionListener {
+    // ======= ADIÇÃO: Seleção por índice =======
+    private class SelecionarPorIndice implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            limparEsperas();
-            modoSelecao = true;
-            statusBar1.setText("Mensagem: clique sobre a figura para selecioná-la.");
+            try {
+                String input = JOptionPane.showInputDialog("Digite o índice da figura a selecionar:");
+                if (input == null || input.isEmpty()) return;
+
+                int indice = Integer.parseInt(input);
+
+                if (indice < 0 || indice >= figuras.getTamanho()) {
+                    JOptionPane.showMessageDialog(Editor.this, "Índice inválido!");
+                    return;
+                }
+
+                if (!figurasSelecionadas.contains(indice))
+                    figurasSelecionadas.add(indice);
+
+                Ponto f = figuras.valorDe(indice);
+                Graphics g = pnlDesenho.getGraphics();
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setColor(Color.red);
+                g2.setStroke(new BasicStroke(3)); // espessura 2 pixels a mais
+                f.desenhar(Color.red, g2);
+                statusBar1.setText("Mensagem: figura " + indice + " selecionada!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(Editor.this, "Erro ao selecionar figura!");
+            }
+        }
+    }
+
+    // ======= ADIÇÃO: Mudar cor e mover figuras selecionadas =======
+    private class MoverSelecionadas implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if (figurasSelecionadas.isEmpty()) {
+                JOptionPane.showMessageDialog(Editor.this, "Nenhuma figura selecionada.");
+                return;
+            }
+
+            try {
+                String dxStr = JOptionPane.showInputDialog("Digite o deslocamento em X:");
+                String dyStr = JOptionPane.showInputDialog("Digite o deslocamento em Y:");
+                if (dxStr == null || dyStr == null) return;
+
+                int dx = Integer.parseInt(dxStr);
+                int dy = Integer.parseInt(dyStr);
+
+                for (int i : figurasSelecionadas) {
+                    Ponto f = figuras.valorDe(i);
+
+                    if (f instanceof Ponto) {
+                        f.setX(f.getX() + dx);
+                        f.setY(f.getY() + dy);
+                    } else if (f instanceof Linha) {
+                        Linha l = (Linha) f;
+                        l.setX(l.getX() + dx);
+                        l.setY(l.getY() + dy);
+                        l.pontoFinal.setX(l.pontoFinal.getX() + dx);
+                        l.pontoFinal.setY(l.pontoFinal.getY() + dy);
+                    } else if (f instanceof Retangulo || f instanceof Circulo || f instanceof Oval) {
+                        f.setX(f.getX() + dx);
+                        f.setY(f.getY() + dy);
+                    } else if (f instanceof Polilinha) {
+                        Polilinha pl = (Polilinha) f;
+                        for (int j = 0; j < pl.getQtdPontos(); j++) {
+                            Ponto p = pl.getPontos().get(j);
+                            p.setX(p.getX() + dx);
+                            p.setY(p.getY() + dy);
+                        }
+                    }
+                }
+
+                pnlDesenho.repaint();
+                statusBar1.setText("Mensagem: figuras movidas (" + dx + "," + dy + ").");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(Editor.this, "Erro ao mover figuras selecionadas!");
+            }
+        }
+    }
+
+    // ======= ADIÇÃO: Apagar figuras selecionadas =======
+    private class ApagarSelecionadas implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if (figurasSelecionadas.isEmpty()) {
+                JOptionPane.showMessageDialog(Editor.this, "Nenhuma figura selecionada.");
+                return;
+            }
+
+            // remove de trás pra frente pra evitar erro de índice
+            figurasSelecionadas.sort((a, b) -> b - a);
+            for (int i : figurasSelecionadas)
+                figuras.remover(i);
+
+            figurasSelecionadas.clear();
+            pnlDesenho.repaint();
+            statusBar1.setText("Mensagem: figuras selecionadas apagadas.");
+        }
+    }
+
+    // ======= ADIÇÃO: Limpar seleção =======
+    private class LimparSelecao implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            figurasSelecionadas.clear();
+            figuraSelecionada = null;
+            pnlDesenho.repaint();
+            statusBar1.setText("Mensagem: seleção limpa.");
         }
     }
 
