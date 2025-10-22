@@ -32,4 +32,14 @@ public class Retangulo extends Ponto
                 cor.getRed() + ";" + cor.getGreen() + ";" + cor.getBlue() +
                 ";" + largura + ";" + altura;
     }
+
+    public int getLargura()
+    {
+        return largura;
+    }
+
+    public int getAltura()
+    {
+        return altura;
+    }
 }

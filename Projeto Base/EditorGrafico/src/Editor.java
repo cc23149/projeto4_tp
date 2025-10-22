@@ -11,21 +11,34 @@ public class Editor extends JFrame
     static private MeuJPanel pnlDesenho;
     private static ManterFiguras figuras;     // objeto de manutenção de vetor de figuras geométricas
 
-    //========== do projeto =========
-    // flags adicionais para circulo/oval
+    //========== ADIÇÃO =========
+    //  circulo/oval
     static boolean esperaCentroCirculo = false, esperaRaioCirculo = false;
     static boolean esperaCentroOval = false, esperaRaioAOval = false, esperaRaioBOval = false;
     static int raioAux; // usado para armazenar o raioA temporariamente durante o desenho da elipse
 
     //========== ADIÇÃO =========
-    // flags adicionais para retângulo
+    // retângulo
     static boolean esperaCantoRetangulo = false, esperaDimensaoRetangulo = false;
     static int xInicioRet, yInicioRet;
+
+    //========== ADIÇÃO =========
+    //  Polilinha
+    static boolean esperaInicioPolilinha = false, esperaPontoPolilinha = false;
+    static Polilinha polilinhaAtual = null;
+
+
+    //========== ADIÇÃO =========
+    // Seleção
+    static boolean modoSelecao = false;
+    static Ponto figuraSelecionada = null;
+
+
 
     private static JLabel statusBar1, statusBar2;
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
-    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnCor, btnAbrir,
+    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnPolilinha,  btnSelecionar, btnCor, btnAbrir,
             btnSalvar, btnApagar, btnSair;
 
     private JPanel pnlBotoes;   // container dos botões
@@ -37,9 +50,11 @@ public class Editor extends JFrame
 
         figuras = new ManterFiguras(100); // cria objeto de manutenção de vetor de figuras geométricas
 
-        //Dei um jeito de ficar visualmente igual aos outros
-        int tamanhoIcone = 15;                                                                                                                      // Não sei se podia usar isso para ajustar o tamanho da imagem
+        //tava dando problema com a img e ai redimensionei
+        int tamanhoIcone = 15;
         Icon imgRet = new ImageIcon(new ImageIcon("botoes\\retangulo.jpg").getImage().getScaledInstance(tamanhoIcone, tamanhoIcone, Image.SCALE_SMOOTH));
+        Icon imgPoli = new ImageIcon(new ImageIcon("botoes\\polilinha.jpg").getImage().getScaledInstance(tamanhoIcone, tamanhoIcone, Image.SCALE_SMOOTH));
+        Icon imgSel = new ImageIcon(new ImageIcon("botoes\\selecionar.jpg").getImage().getScaledInstance(tamanhoIcone, tamanhoIcone, Image.SCALE_SMOOTH));
 
         Icon imgAbrir = new ImageIcon("botoes\\abrir.jpg");
         btnAbrir = new JButton("Abrir", imgAbrir);
@@ -49,6 +64,8 @@ public class Editor extends JFrame
         btnCirculo = new JButton("Circulo", new ImageIcon("botoes\\circulo.jpg"));
         btnElipse = new JButton("Elipse", new ImageIcon("botoes\\elipse.jpg"));
         btnRetangulo = new JButton("Retangulo", imgRet);
+        btnPolilinha = new JButton("Polilinha", imgPoli);
+        btnSelecionar = new JButton("Selecionar", imgSel);
         btnCor = new JButton("Cores", new ImageIcon("botoes\\cores.jpg"));
         btnApagar = new JButton("Apagar", new ImageIcon("botoes\\apagar.jpg"));
         btnSair = new JButton("Sair", new ImageIcon("botoes\\sair.jpg"));
@@ -63,7 +80,9 @@ public class Editor extends JFrame
         pnlBotoes.add(btnLinha);
         pnlBotoes.add(btnCirculo);
         pnlBotoes.add(btnElipse);
-        pnlBotoes.add(btnRetangulo); // do projeto
+        pnlBotoes.add(btnRetangulo);
+        pnlBotoes.add(btnPolilinha);
+        pnlBotoes.add(btnSelecionar);
         pnlBotoes.add(btnCor);
         pnlBotoes.add(btnApagar);
         pnlBotoes.add(btnSair);
@@ -74,7 +93,9 @@ public class Editor extends JFrame
         btnLinha.addActionListener(new DesenhaLinha());
         btnCirculo.addActionListener(new DesenhaCirculo());
         btnElipse.addActionListener(new DesenhaElipse());
-        btnRetangulo.addActionListener(new DesenhaRetangulo()); // do projeto
+        btnRetangulo.addActionListener(new DesenhaRetangulo());
+        btnPolilinha.addActionListener(new DesenhaPolilinha());
+        btnSelecionar.addActionListener(new SelecionarFigura());
         btnCor.addActionListener(new EscolheCor());
         btnApagar.addActionListener(new ApagarTudo());
         btnSair.addActionListener(new SairDoPrograma());
@@ -129,8 +150,10 @@ public class Editor extends JFrame
         esperaCentroOval = false;
         esperaRaioAOval = false;
         esperaRaioBOval = false;
-        esperaCantoRetangulo = false; // Do Projeto
-        esperaDimensaoRetangulo = false; // Do Projeto
+        esperaCantoRetangulo = false;
+        esperaDimensaoRetangulo = false;
+        esperaInicioPolilinha = false;
+        esperaPontoPolilinha = false;
     }
 
     private class FazAbertura implements ActionListener {
@@ -178,7 +201,7 @@ public class Editor extends JFrame
                                     int raioB = Integer.parseInt(campos[7].trim());
                                     figuras.incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
                                     break;
-                                case "r" : // ADIÇÃO
+                                case "r" :
                                     int largura = Integer.parseInt(campos[6].trim());
                                     int altura = Integer.parseInt(campos[7].trim());
                                     figuras.incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
@@ -217,6 +240,17 @@ public class Editor extends JFrame
         }
     }
 
+    //Seleção
+    private class SelecionarFigura implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            limparEsperas();
+            modoSelecao = true;
+            statusBar1.setText("Mensagem: clique sobre a figura para selecioná-la.");
+        }
+    }
+
+
+
     private class DesenhaPonto implements ActionListener {
         public void actionPerformed(ActionEvent e)
         {
@@ -251,12 +285,21 @@ public class Editor extends JFrame
         }
     }
 
-    //============ ADIÇÃO DO RETÂNGULO ============
     private class DesenhaRetangulo implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             statusBar1.setText("Mensagem: clique no canto superior esquerdo do retângulo:");
             limparEsperas();
             esperaCantoRetangulo = true;
+        }
+    }
+
+    //Polilinha
+    private class DesenhaPolilinha implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            statusBar1.setText("Mensagem: clique no primeiro ponto da polilinha (botão direito para encerrar)");
+            limparEsperas();
+            esperaInicioPolilinha = true;
+            polilinhaAtual = new Polilinha(0, corAtual);
         }
     }
 
@@ -319,6 +362,106 @@ public class Editor extends JFrame
 
         public void mousePressed (MouseEvent e)
         {
+            if (modoSelecao)
+            {
+                figuraSelecionada = null;
+
+                // percorre as figuras do topo para o fundo
+                for (int i = figuras.getTamanho() - 1; i >= 0; i--)
+                {
+                    Ponto f = figuras.valorDe(i);
+
+                    if (f instanceof Circulo)
+                    {
+                        Circulo c = (Circulo) f;
+                        int dx = e.getX() - c.getX();
+                        int dy = e.getY() - c.getY();
+                        if (Math.sqrt(dx * dx + dy * dy) <= c.raio)
+                        {
+                            figuraSelecionada = f;
+                            break;
+                        }
+                    }
+                    else if (f instanceof Linha)
+                    {
+                        Linha l = (Linha) f;
+                        double dist = Math.abs((l.pontoFinal.getY() - l.getY()) * e.getX() -
+                                (l.pontoFinal.getX() - l.getX()) * e.getY() +
+                                l.pontoFinal.getX() * l.getY() - l.pontoFinal.getY() * l.getX())
+                                / Math.hypot(l.pontoFinal.getY() - l.getY(), l.pontoFinal.getX() - l.getX());
+                        if (dist < 5)
+                        {
+                            figuraSelecionada = f;
+                            break;
+                        }
+                    }
+                    else if (f instanceof Retangulo)
+                    {
+                        Retangulo r = (Retangulo) f;
+                        if (e.getX() >= r.getX() && e.getX() <= r.getX() + r.getLargura() &&
+                                e.getY() >= r.getY() && e.getY() <= r.getY() + r.getAltura())
+                        {
+                            figuraSelecionada = f;
+                            break;
+                        }
+                    }
+                    else if (f instanceof Oval)
+                    {
+                        Oval o = (Oval) f;
+                        double dx = (double)(e.getX() - o.getX()) / o.raioA;
+                        double dy = (double)(e.getY() - o.getY()) / o.raioB;
+                        if (dx * dx + dy * dy <= 1)
+                        {
+                            figuraSelecionada = f;
+                            break;
+                        }
+                    }
+                    else if (f instanceof Ponto)
+                    {
+                        if (Math.abs(e.getX() - f.getX()) < 4 && Math.abs(e.getY() - f.getY()) < 4)
+                        {
+                            figuraSelecionada = f;
+                            break;
+                        }
+                    }
+                    else if (f instanceof Polilinha)
+                    {
+                        Polilinha pl = (Polilinha) f;
+                        for (int j = 0; j < pl.getQtdPontos() - 1; j++)
+                        {
+                            Ponto p1 = pl.getPontos().get(j);
+                            Ponto p2 = pl.getPontos().get(j + 1);
+                            double dist = Math.abs((p2.getY() - p1.getY()) * e.getX() -
+                                    (p2.getX() - p1.getX()) * e.getY() +
+                                    p2.getX() * p1.getY() - p2.getY() * p1.getX())
+                                    / Math.hypot(p2.getY() - p1.getY(), p2.getX() - p1.getX());
+                            if (dist < 5)
+                            {
+                                figuraSelecionada = f;
+                                break;
+                            }
+                        }
+                        if (figuraSelecionada != null)
+                            break;
+                    }
+                }
+
+                if (figuraSelecionada != null)
+                {
+                    statusBar1.setText("Mensagem: figura selecionada!");
+                    Graphics g = pnlDesenho.getGraphics();
+                    g.setColor(Color.red);
+                    figuraSelecionada.desenhar(Color.red, g);
+                }
+                else
+                {
+                    statusBar1.setText("Mensagem: nenhuma figura encontrada neste ponto.");
+                }
+
+                modoSelecao = false;
+                return; // impede que o clique prossiga para desenho
+            }
+
             if (esperaPonto)
             {
                 Ponto novoPonto = new Ponto(e.getX(), e.getY(), corAtual);
@@ -343,8 +486,6 @@ public class Editor extends JFrame
                 novaLinha.desenhar(corAtual, pnlDesenho.getGraphics());
                 esperaFimLinha = false;
             }
-
-            //========== Do Projeto ===========
 
             else if (esperaCentroCirculo)
             {
@@ -394,7 +535,6 @@ public class Editor extends JFrame
                 statusBar1.setText("Mensagem:");
             }
 
-            //========= ADIÇÃO DO RETÂNGULO =========
             else if (esperaCantoRetangulo)
             {
                 xInicioRet = e.getX();
@@ -416,6 +556,34 @@ public class Editor extends JFrame
                 esperaDimensaoRetangulo = false;
                 statusBar1.setText("Mensagem:");
             }
+
+            //========= ADIÇÃO DA POLILINHA =========
+            else if (esperaInicioPolilinha || esperaPontoPolilinha)
+            {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    if (polilinhaAtual != null && polilinhaAtual.getQtdPontos() > 1) {
+                        figuras.incluirNoFinal(polilinhaAtual);
+                        polilinhaAtual.desenhar(corAtual, pnlDesenho.getGraphics());
+                        pnlDesenho.repaint();
+                    }
+                    esperaInicioPolilinha = false;
+                    esperaPontoPolilinha = false;
+                    polilinhaAtual = null;
+                    statusBar1.setText("Mensagem: polilinha finalizada.");
+                    return;
+                }
+
+                Ponto novo = new Ponto(e.getX(), e.getY(), corAtual);
+                if (polilinhaAtual == null)
+                    polilinhaAtual = new Polilinha(0, corAtual);
+                polilinhaAtual.adicionarPonto(novo);
+                polilinhaAtual.desenhar(corAtual, pnlDesenho.getGraphics());
+                pnlDesenho.repaint();
+
+                esperaInicioPolilinha = false;
+                esperaPontoPolilinha = true;
+                statusBar1.setText("Mensagem: clique para novo ponto ou botão direito para encerrar.");
+            }
         }
 
         public void mouseEntered (MouseEvent e) {}
@@ -424,8 +592,7 @@ public class Editor extends JFrame
 
         public void paintComponent(Graphics g)
         {
-            super.paintComponent(g); // limpa o fundo antes de redesenhar
-
+            super.paintComponent(g);
             for (int atual = 0; atual < figuras.getTamanho(); atual++)
             {
                 Ponto figuraAtual = figuras.valorDe(atual);
