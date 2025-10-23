@@ -47,7 +47,7 @@ public class Editor extends JFrame
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
     private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnPolilinha, btnCor, btnAbrir,
-            btnSalvar, btnApagar, btnSair, btnSelIndice, btnMover, btnApagarSelecionadas, btnLimparSelecao;
+            btnSalvar, btnApagar, btnSelIndice, btnMover, btnApagarSelecionadas, btnLimparSelecao, btnListar, btnSair, btnSelecionar;
 
 
     private JPanel pnlBotoes;   // container dos botões
@@ -74,7 +74,7 @@ public class Editor extends JFrame
         btnElipse = new JButton("Elipse", new ImageIcon("botoes\\elipse.jpg"));
         btnRetangulo = new JButton("Retangulo", imgRet);
         btnPolilinha = new JButton("Polilinha", imgPoli);
-        //btnSelecionar = new JButton("Selecionar", imgSel);
+        btnSelecionar = new JButton("Selecionar", imgSel);
         btnCor = new JButton("Cores", new ImageIcon("botoes\\cores.jpg"));
         btnApagar = new JButton("Apagar", new ImageIcon("botoes\\apagar.jpg"));
         btnSair = new JButton("Sair", new ImageIcon("botoes\\sair.jpg"));
@@ -83,6 +83,7 @@ public class Editor extends JFrame
         btnMover = new JButton("Mover (ΔX,ΔY)");
         btnApagarSelecionadas = new JButton("Apagar Selecionadas");
         btnLimparSelecao = new JButton("Limpar Seleção");
+        btnListar = new JButton("Listar Figuras");
 
         pnlBotoes = new JPanel();
         FlowLayout flwBotoes = new FlowLayout();
@@ -96,7 +97,7 @@ public class Editor extends JFrame
         pnlBotoes.add(btnElipse);
         pnlBotoes.add(btnRetangulo);
         pnlBotoes.add(btnPolilinha);
-        //pnlBotoes.add(btnSelecionar);
+        pnlBotoes.add(btnSelecionar);
         pnlBotoes.add(btnCor);
         pnlBotoes.add(btnApagar);
         pnlBotoes.add(btnSair);
@@ -106,6 +107,7 @@ public class Editor extends JFrame
         pnlBotoes.add(btnMover);
         pnlBotoes.add(btnApagarSelecionadas);
         pnlBotoes.add(btnLimparSelecao);
+        pnlBotoes.add(btnListar);
 
 
         btnAbrir.addActionListener(new FazAbertura());
@@ -116,6 +118,8 @@ public class Editor extends JFrame
         btnElipse.addActionListener(new DesenhaElipse());
         btnRetangulo.addActionListener(new DesenhaRetangulo());
         btnPolilinha.addActionListener(new DesenhaPolilinha());
+        btnSelecionar.addActionListener(new SelecionarFigura());
+
 
         btnCor.addActionListener(new EscolheCor());
         btnApagar.addActionListener(new ApagarTudo());
@@ -126,6 +130,7 @@ public class Editor extends JFrame
         btnMover.addActionListener(new MoverSelecionadas());
         btnApagarSelecionadas.addActionListener(new ApagarSelecionadas());
         btnLimparSelecao.addActionListener(new LimparSelecao());
+        btnListar.addActionListener(new ListarFiguras());
 
 
         Container cntForm = getContentPane();
@@ -234,6 +239,18 @@ public class Editor extends JFrame
                                     int altura = Integer.parseInt(campos[7].trim());
                                     figuras.incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
                                     break;
+                                case "pl" :
+                                    // formato: pl; xc; yc; corR; corG; corB; qtdPontos; x1; y1; x2; y2; ... xn; yn
+                                    int qtd = Integer.parseInt(campos[6].trim());
+                                    Polilinha pl = new Polilinha(qtd, cor);
+                                    int pos = 7;
+                                    for (int i = 0; i < qtd; i++) {
+                                        int x = Integer.parseInt(campos[pos++].trim());
+                                        int y = Integer.parseInt(campos[pos++].trim());
+                                        pl.adicionarPonto(new Ponto(x, y, cor));
+                                    }
+                                    figuras.incluirNoFinal(pl);
+                                    break;
                             }
                         }
                         arqFiguras.close();
@@ -269,6 +286,14 @@ public class Editor extends JFrame
     }
 
     //Seleção
+    private class SelecionarFigura implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            limparEsperas();
+            modoSelecao = true;
+            statusBar1.setText("Mensagem: clique sobre a figura para selecioná-la.");
+        }
+    }
+
     // ======= ADIÇÃO: Seleção por índice =======
     private class SelecionarPorIndice implements ActionListener {
         public void actionPerformed(ActionEvent e) {
@@ -359,7 +384,12 @@ public class Editor extends JFrame
             // remove de trás pra frente pra evitar erro de índice
             figurasSelecionadas.sort((a, b) -> b - a);
             for (int i : figurasSelecionadas)
-                figuras.remover(i);
+                // corrigido: ManterFiguras possui método 'excluir', não 'remover'
+                try {
+                    figuras.excluir(i);
+                } catch (IndexOutOfBoundsException ex) {
+                    // se der erro por algum motivo, apenas ignora essa posição
+                }
 
             figurasSelecionadas.clear();
             pnlDesenho.repaint();
@@ -377,6 +407,48 @@ public class Editor extends JFrame
         }
     }
 
+    // ======= ADIÇÃO: Listar figuras (índices e tipos) =======
+    private class ListarFiguras implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Índice : Tipo - detalhes\n");
+            int n = figuras.getTamanho();
+            for (int i = 0; i < n; i++) {
+                Ponto f = figuras.valorDe(i);
+                String tipo = f.getClass().getSimpleName();
+                String detalhes = "";
+                if (f instanceof Circulo) {
+                    Circulo c = (Circulo) f;
+                    detalhes = String.format("centro=(%d,%d) raio=%d cor=%s", c.getX(), c.getY(), c.raio, corToString(c.getCor()));
+                } else if (f instanceof Oval) {
+                    Oval o = (Oval) f;
+                    detalhes = String.format("centro=(%d,%d) a=%d b=%d cor=%s", o.getX(), o.getY(), o.raioA, o.raioB, corToString(o.getCor()));
+                } else if (f instanceof Linha) {
+                    Linha l = (Linha) f;
+                    detalhes = String.format("inicio=(%d,%d) fim=(%d,%d) cor=%s", l.getX(), l.getY(), l.pontoFinal.getX(), l.pontoFinal.getY(), corToString(l.getCor()));
+                } else if (f instanceof Retangulo) {
+                    Retangulo r = (Retangulo) f;
+                    detalhes = String.format("x=%d y=%d w=%d h=%d cor=%s", r.getX(), r.getY(), r.getLargura(), r.getAltura(), corToString(r.getCor()));
+                } else if (f instanceof Polilinha) {
+                    Polilinha pl = (Polilinha) f;
+                    detalhes = String.format("pontos=%d cor=%s", pl.getQtdPontos(), corToString(pl.getCor()));
+                } else if (f instanceof Ponto) {
+                    detalhes = String.format("x=%d y=%d cor=%s", f.getX(), f.getY(), corToString(f.getCor()));
+                }
+                sb.append(i).append(" : ").append(tipo).append(" - ").append(detalhes).append("\n");
+            }
+            JTextArea area = new JTextArea(sb.toString());
+            area.setEditable(false);
+            JScrollPane sp = new JScrollPane(area);
+            sp.setPreferredSize(new Dimension(480, 320));
+            JOptionPane.showMessageDialog(Editor.this, sp, "Lista de Figuras (índice e tipo)", JOptionPane.PLAIN_MESSAGE);
+        }
+
+        private String corToString(Color c) {
+            if (c == null) return "null";
+            return String.format("(%d,%d,%d)", c.getRed(), c.getGreen(), c.getBlue());
+        }
+    }
 
 
     private class DesenhaPonto implements ActionListener {
@@ -550,7 +622,7 @@ public class Editor extends JFrame
             statusBar1.setText("Mensagem:");
         }
 
-        public void mousePressed (MouseEvent e)
+        public void mousePressed(MouseEvent e)
         {
             // ===== ADIÇÃO =====
             xAnterior = e.getX();
@@ -577,6 +649,8 @@ public class Editor extends JFrame
                         if (Math.sqrt(dx * dx + dy * dy) <= c.raio)
                         {
                             figuraSelecionada = f;
+                            if (!figurasSelecionadas.contains(i))
+                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -590,6 +664,8 @@ public class Editor extends JFrame
                         if (dist < 5)
                         {
                             figuraSelecionada = f;
+                            if (!figurasSelecionadas.contains(i))
+                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -600,6 +676,8 @@ public class Editor extends JFrame
                                 e.getY() >= r.getY() && e.getY() <= r.getY() + r.getAltura())
                         {
                             figuraSelecionada = f;
+                            if (!figurasSelecionadas.contains(i))
+                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -611,6 +689,8 @@ public class Editor extends JFrame
                         if (dx * dx + dy * dy <= 1)
                         {
                             figuraSelecionada = f;
+                            if (!figurasSelecionadas.contains(i))
+                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -619,6 +699,8 @@ public class Editor extends JFrame
                         if (Math.abs(e.getX() - f.getX()) < 4 && Math.abs(e.getY() - f.getY()) < 4)
                         {
                             figuraSelecionada = f;
+                            if (!figurasSelecionadas.contains(i))
+                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -636,6 +718,8 @@ public class Editor extends JFrame
                             if (dist < 5)
                             {
                                 figuraSelecionada = f;
+                                if (!figurasSelecionadas.contains(i))
+                                    figurasSelecionadas.add(i);
                                 break;
                             }
                         }
@@ -647,27 +731,28 @@ public class Editor extends JFrame
                 if (figuraSelecionada != null)
                 {
                     statusBar1.setText("Mensagem: figura selecionada!");
-                    Graphics g = pnlDesenho.getGraphics();
-                    g.setColor(Color.red);
-                    figuraSelecionada.desenhar(Color.red, g);
                 }
                 else
                 {
                     statusBar1.setText("Mensagem: nenhuma figura encontrada neste ponto.");
                 }
 
+                pnlDesenho.repaint(); // redesenha para manter vermelho
                 modoSelecao = false;
                 return; // impede que o clique prossiga para desenho
             }
 
             // ===== ADIÇÃO =====
-            // se clicar fora de qualquer modo e havia uma figura selecionada, desmarca
-            if (!modoSelecao && figuraSelecionada != null && !SwingUtilities.isRightMouseButton(e)) {
+            // se clicar fora de qualquer modo e havia figuras selecionadas, desmarca todas
+            if (!modoSelecao && (!figurasSelecionadas.isEmpty() || figuraSelecionada != null)
+                    && !SwingUtilities.isRightMouseButton(e)) {
+                figurasSelecionadas.clear();
                 figuraSelecionada = null;
                 pnlDesenho.repaint();
                 statusBar1.setText("Mensagem: nenhuma figura selecionada.");
             }
 
+            // ===== RESTANTE ORIGINAL =====
             if (esperaPonto)
             {
                 Ponto novoPonto = new Ponto(e.getX(), e.getY(), corAtual);
@@ -692,7 +777,6 @@ public class Editor extends JFrame
                 novaLinha.desenhar(corAtual, pnlDesenho.getGraphics());
                 esperaFimLinha = false;
             }
-
             else if (esperaCentroCirculo)
             {
                 p1.setX(e.getX());
@@ -740,7 +824,6 @@ public class Editor extends JFrame
                 esperaRaioBOval = false;
                 statusBar1.setText("Mensagem:");
             }
-
             else if (esperaCantoRetangulo)
             {
                 xInicioRet = e.getX();
@@ -762,8 +845,6 @@ public class Editor extends JFrame
                 esperaDimensaoRetangulo = false;
                 statusBar1.setText("Mensagem:");
             }
-
-            //========= ADIÇÃO DA POLILINHA =========
             else if (esperaInicioPolilinha || esperaPontoPolilinha)
             {
                 if (SwingUtilities.isRightMouseButton(e)) {
@@ -793,6 +874,7 @@ public class Editor extends JFrame
         }
 
 
+
         public void mouseEntered (MouseEvent e) {}
         public void mouseExited (MouseEvent e) {}
 
@@ -807,11 +889,23 @@ public class Editor extends JFrame
         public void paintComponent(Graphics g)
         {
             super.paintComponent(g);
-            for (int atual = 0; atual < figuras.getTamanho(); atual++)
-            {
-                Ponto figuraAtual = figuras.valorDe(atual);
-                figuraAtual.desenhar(figuraAtual.getCor(), g);
+
+            Graphics2D g2 = (Graphics2D) g;
+            for (int i = 0; i < figuras.getTamanho(); i++) {
+                Ponto f = figuras.valorDe(i);
+
+                // Se está selecionada, desenha com destaque
+                if (figurasSelecionadas.contains(i) || f == figuraSelecionada) {
+                    g2.setColor(Color.red);
+                    g2.setStroke(new BasicStroke(3));
+                    f.desenhar(Color.red, g2);
+                } else {
+                    g2.setColor(f.getCor());
+                    g2.setStroke(new BasicStroke(1));
+                    f.desenhar(f.getCor(), g2);
+                }
             }
         }
+
     }
 }

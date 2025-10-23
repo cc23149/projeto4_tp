@@ -58,9 +58,6 @@ public class ManterFiguras implements ManterDados<Ponto>
                         incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
                         break;
 
-                    //====================================================
-                    //             ADIÇÃO: leitura de Polilinha
-                    //====================================================
                     case "pl":
                         // formato: pl; corR; corG; corB; n; x1; y1; x2; y2; ... xn; yn
                         java.awt.Color corPoli = new java.awt.Color(corR, corG, corB);
@@ -179,4 +176,10 @@ public class ManterFiguras implements ManterDados<Ponto>
     @Override public void irAoFim() { posicaoAtual = quantosDados - 1; }
     @Override public void irAoAnterior() { if (posicaoAtual > 0) posicaoAtual--; }
     @Override public void irAoProximo() { if (posicaoAtual < quantosDados - 1) posicaoAtual++; }
+
+
+
+    public void remover(int indice) throws IndexOutOfBoundsException {
+        excluir(indice);
+    }
 }
