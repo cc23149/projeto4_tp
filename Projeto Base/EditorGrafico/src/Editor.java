@@ -603,8 +603,7 @@ public class Editor extends JFrame
                 }
                 else if (figuraSelecionada instanceof Polilinha) {
                     Polilinha pl = (Polilinha) figuraSelecionada;
-                    for (int i = 0; i < pl.getQtdPontos(); i++) {
-                        Ponto p = pl.getPontos().get(i);
+                    for (Ponto p : pl.getPontos()) {
                         p.setX(p.getX() + dx);
                         p.setY(p.getY() + dy);
                     }
@@ -612,17 +611,27 @@ public class Editor extends JFrame
 
                 xAnterior = e.getX();
                 yAnterior = e.getY();
+
+                // redesenha todas as figuras normalmente
                 pnlDesenho.repaint();
+
+                // desenha a figura selecionada em vermelho por cima
+                Graphics2D g2 = (Graphics2D) pnlDesenho.getGraphics();
+                g2.setColor(Color.red);
+                g2.setStroke(new BasicStroke(3));
+                figuraSelecionada.desenhar(Color.red, g2);
+
                 statusBar1.setText("Mensagem: movendo figura selecionada...");
             }
         }
+
 
 
         public void mouseClicked (MouseEvent e) {
             statusBar1.setText("Mensagem:");
         }
 
-        public void mousePressed(MouseEvent e)
+        public void mousePressed (MouseEvent e)
         {
             // ===== ADIÇÃO =====
             xAnterior = e.getX();
@@ -649,8 +658,6 @@ public class Editor extends JFrame
                         if (Math.sqrt(dx * dx + dy * dy) <= c.raio)
                         {
                             figuraSelecionada = f;
-                            if (!figurasSelecionadas.contains(i))
-                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -664,8 +671,6 @@ public class Editor extends JFrame
                         if (dist < 5)
                         {
                             figuraSelecionada = f;
-                            if (!figurasSelecionadas.contains(i))
-                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -676,8 +681,6 @@ public class Editor extends JFrame
                                 e.getY() >= r.getY() && e.getY() <= r.getY() + r.getAltura())
                         {
                             figuraSelecionada = f;
-                            if (!figurasSelecionadas.contains(i))
-                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -689,8 +692,6 @@ public class Editor extends JFrame
                         if (dx * dx + dy * dy <= 1)
                         {
                             figuraSelecionada = f;
-                            if (!figurasSelecionadas.contains(i))
-                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
@@ -699,23 +700,32 @@ public class Editor extends JFrame
                         if (Math.abs(e.getX() - f.getX()) < 4 && Math.abs(e.getY() - f.getY()) < 4)
                         {
                             figuraSelecionada = f;
-                            if (!figurasSelecionadas.contains(i))
-                                figurasSelecionadas.add(i);
                             break;
                         }
                     }
                     else if (f instanceof Polilinha)
                     {
                         Polilinha pl = (Polilinha) f;
-                        for (int j = 0; j < pl.getQtdPontos() - 1; j++)
+
+                        java.util.ArrayList<Ponto> pts = pl.getPontos();
+                        for (int j = 0; j < pts.size() - 1; j++)
                         {
-                            Ponto p1 = pl.getPontos().get(j);
-                            Ponto p2 = pl.getPontos().get(j + 1);
-                            double dist = Math.abs((p2.getY() - p1.getY()) * e.getX() -
+                            Ponto p1 = pts.get(j);
+                            Ponto p2 = pts.get(j + 1);
+
+                            // cálculo da distância ponto-linha
+                            double numerador = Math.abs((p2.getY() - p1.getY()) * e.getX() -
                                     (p2.getX() - p1.getX()) * e.getY() +
-                                    p2.getX() * p1.getY() - p2.getY() * p1.getX())
-                                    / Math.hypot(p2.getY() - p1.getY(), p2.getX() - p1.getX());
-                            if (dist < 5)
+                                    p2.getX() * p1.getY() - p2.getY() * p1.getX());
+                            double denominador = Math.hypot(p2.getY() - p1.getY(), p2.getX() - p1.getX());
+                            double dist = numerador / (denominador == 0 ? 1 : denominador);
+
+                            // tolerância maior (10px) e checa se o clique está dentro da faixa do segmento
+                            if (dist < 10 &&
+                                    e.getX() >= Math.min(p1.getX(), p2.getX()) - 5 &&
+                                    e.getX() <= Math.max(p1.getX(), p2.getX()) + 5 &&
+                                    e.getY() >= Math.min(p1.getY(), p2.getY()) - 5 &&
+                                    e.getY() <= Math.max(p1.getY(), p2.getY()) + 5)
                             {
                                 figuraSelecionada = f;
                                 if (!figurasSelecionadas.contains(i))
@@ -723,6 +733,7 @@ public class Editor extends JFrame
                                 break;
                             }
                         }
+
                         if (figuraSelecionada != null)
                             break;
                     }
@@ -731,28 +742,27 @@ public class Editor extends JFrame
                 if (figuraSelecionada != null)
                 {
                     statusBar1.setText("Mensagem: figura selecionada!");
+                    Graphics g = pnlDesenho.getGraphics();
+                    g.setColor(Color.red);
+                    figuraSelecionada.desenhar(Color.red, g);
                 }
                 else
                 {
                     statusBar1.setText("Mensagem: nenhuma figura encontrada neste ponto.");
                 }
 
-                pnlDesenho.repaint(); // redesenha para manter vermelho
                 modoSelecao = false;
                 return; // impede que o clique prossiga para desenho
             }
 
             // ===== ADIÇÃO =====
-            // se clicar fora de qualquer modo e havia figuras selecionadas, desmarca todas
-            if (!modoSelecao && (!figurasSelecionadas.isEmpty() || figuraSelecionada != null)
-                    && !SwingUtilities.isRightMouseButton(e)) {
-                figurasSelecionadas.clear();
+            // se clicar fora de qualquer modo e havia uma figura selecionada, desmarca
+            if (!modoSelecao && figuraSelecionada != null && !SwingUtilities.isRightMouseButton(e)) {
                 figuraSelecionada = null;
                 pnlDesenho.repaint();
                 statusBar1.setText("Mensagem: nenhuma figura selecionada.");
             }
 
-            // ===== RESTANTE ORIGINAL =====
             if (esperaPonto)
             {
                 Ponto novoPonto = new Ponto(e.getX(), e.getY(), corAtual);
@@ -777,6 +787,7 @@ public class Editor extends JFrame
                 novaLinha.desenhar(corAtual, pnlDesenho.getGraphics());
                 esperaFimLinha = false;
             }
+
             else if (esperaCentroCirculo)
             {
                 p1.setX(e.getX());
@@ -824,6 +835,7 @@ public class Editor extends JFrame
                 esperaRaioBOval = false;
                 statusBar1.setText("Mensagem:");
             }
+
             else if (esperaCantoRetangulo)
             {
                 xInicioRet = e.getX();
@@ -845,6 +857,8 @@ public class Editor extends JFrame
                 esperaDimensaoRetangulo = false;
                 statusBar1.setText("Mensagem:");
             }
+
+            //Polilinha
             else if (esperaInicioPolilinha || esperaPontoPolilinha)
             {
                 if (SwingUtilities.isRightMouseButton(e)) {
@@ -875,15 +889,29 @@ public class Editor extends JFrame
 
 
 
+
         public void mouseEntered (MouseEvent e) {}
         public void mouseExited (MouseEvent e) {}
 
-        public void mouseReleased (MouseEvent e) {
+        public void mouseReleased(MouseEvent e) {
             if (movendoFigura) {
                 movendoFigura = false;
+
+                // redesenha tudo com as cores originais
+                pnlDesenho.repaint();
+
+                // se ainda houver figura selecionada, mostra o contorno vermelho por cima
+                if (figuraSelecionada != null) {
+                    Graphics2D g2 = (Graphics2D) pnlDesenho.getGraphics();
+                    g2.setColor(Color.red);
+                    g2.setStroke(new BasicStroke(3));
+                    figuraSelecionada.desenhar(Color.red, g2);
+                }
+
                 statusBar1.setText("Mensagem: movimento concluído.");
             }
         }
+
 
 
         public void paintComponent(Graphics g)
