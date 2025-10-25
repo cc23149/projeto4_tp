@@ -1,8 +1,9 @@
 import java.awt.*;
 
+//herda de Ponto
 public class Oval extends Ponto
 {
-    // ponto central e cor foram herdados de Ponto
+
     int raioA, raioB;
 
     public void desenhar(Color corDesenho, Graphics g) {

@@ -36,30 +36,35 @@ public class ManterFiguras implements ManterDados<Ponto>
 
                 switch (tipo) {
                     case "p":
+                        //Ponto
                         incluirNoFinal(new Ponto(xBase, yBase, cor));
                         break;
+                        //Linha
                     case "l":
                         int xFinal = Integer.parseInt(campos[6].trim());
                         int yFinal = Integer.parseInt(campos[7].trim());
                         incluirNoFinal(new Linha(xBase, yBase, xFinal, yFinal, cor));
                         break;
+                        //circulo
                     case "c":
                         int raio = Integer.parseInt(campos[6].trim());
                         incluirNoFinal(new Circulo(xBase, yBase, raio, cor));
                         break;
+                        //Oval/Elipse
                     case "o":
                         int raioA = Integer.parseInt(campos[6].trim());
                         int raioB = Integer.parseInt(campos[7].trim());
                         incluirNoFinal(new Oval(xBase, yBase, raioA, raioB, cor));
                         break;
+                        //retangulo
                     case "r":
                         int largura = Integer.parseInt(campos[6].trim());
                         int altura = Integer.parseInt(campos[7].trim());
                         incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
                         break;
-
+                    //polilinha
                     case "pl":
-                        // formato: pl; corR; corG; corB; n; x1; y1; x2; y2; ... xn; yn
+                        //pl; corR; corG; corB; n; x1; y1; x2; y2; ... xn; yn
                         java.awt.Color corPoli = new java.awt.Color(corR, corG, corB);
                         int qtd = Integer.parseInt(campos[6].trim());
                         Polilinha pl = new Polilinha(qtd, corPoli);
@@ -179,7 +184,4 @@ public class ManterFiguras implements ManterDados<Ponto>
 
 
 
-    public void remover(int indice) throws IndexOutOfBoundsException {
-        excluir(indice);
-    }
 }

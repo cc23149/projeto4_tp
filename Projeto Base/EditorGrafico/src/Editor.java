@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.Scanner;
 import javax.swing.*;
 
+//para usar o vetor
 import java.util.ArrayList;
 
 public class Editor extends JFrame
@@ -13,42 +14,37 @@ public class Editor extends JFrame
     static private MeuJPanel pnlDesenho;
     private static ManterFiguras figuras;     // objeto de manutenção de vetor de figuras geométricas
 
-    //========== ADIÇÃO =========
     //  circulo/oval
     static boolean esperaCentroCirculo = false, esperaRaioCirculo = false;
     static boolean esperaCentroOval = false, esperaRaioAOval = false, esperaRaioBOval = false;
     static int raioAux; // usado para armazenar o raioA temporariamente durante o desenho da elipse
 
-    //========== ADIÇÃO =========
     // retângulo
     static boolean esperaCantoRetangulo = false, esperaDimensaoRetangulo = false;
     static int xInicioRet, yInicioRet;
 
-    //========== ADIÇÃO =========
     //  Polilinha
     static boolean esperaInicioPolilinha = false, esperaPontoPolilinha = false;
     static Polilinha polilinhaAtual = null;
 
-
-    //========== ADIÇÃO =========
     // Seleção
     static boolean modoSelecao = false;
     static Ponto figuraSelecionada = null;
 
-    // Movimento e arraste de figuras
+    // Para poder movimentar e arrastar as figuras
     static boolean movendoFigura = false;
     static int xAnterior, yAnterior;
 
-    // ======= ADIÇÃO: Vetor de figuras selecionadas =======
+    // Vetor de figuras para poder selecionar por Indice
     static ArrayList<Integer> figurasSelecionadas = new ArrayList<Integer>();
-
 
     private static JLabel statusBar1, statusBar2;
     private static Ponto p1 = new Ponto();  // ponto inicial de linha, circulo, etc.
 
-    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnPolilinha, btnCor, btnAbrir,
+    //Botões
+    private final JButton btnPonto, btnLinha, btnCirculo, btnElipse, btnRetangulo, btnPolilinha, btnCor, btnAbrir,  //Esse btnSelecionar é para Selecionar por click, sem usar indice, fiz só pela oportunidade
             btnSalvar, btnApagar, btnSelIndice, btnMover, btnApagarSelecionadas, btnLimparSelecao, btnListar, btnSair, btnSelecionar;
-
+                                                                                                   //btnListar não estava pedindo mas facilitou pra achar os indices
 
     private JPanel pnlBotoes;   // container dos botões
     static private JInternalFrame janelaFilha;
@@ -59,7 +55,7 @@ public class Editor extends JFrame
 
         figuras = new ManterFiguras(100); // cria objeto de manutenção de vetor de figuras geométricas
 
-        //tava dando problema com a img e ai redimensionei
+        //Essa parte é para deixar o tamanho dos botões igual ao dos outros, porque as imagens estavam ficando muito grande
         int tamanhoIcone = 15;
         Icon imgRet = new ImageIcon(new ImageIcon("botoes\\retangulo.jpg").getImage().getScaledInstance(tamanhoIcone, tamanhoIcone, Image.SCALE_SMOOTH));
         Icon imgPoli = new ImageIcon(new ImageIcon("botoes\\polilinha.jpg").getImage().getScaledInstance(tamanhoIcone, tamanhoIcone, Image.SCALE_SMOOTH));
@@ -70,17 +66,20 @@ public class Editor extends JFrame
         btnSalvar = new JButton("Salvar", new ImageIcon("botoes\\salvar.jpg"));
         btnPonto = new JButton("Ponto", new ImageIcon("botoes\\ponto.jpg"));
         btnLinha = new JButton("Linha", new ImageIcon("botoes\\linha.jpg"));
+
         btnCirculo = new JButton("Circulo", new ImageIcon("botoes\\circulo.jpg"));
         btnElipse = new JButton("Elipse", new ImageIcon("botoes\\elipse.jpg"));
         btnRetangulo = new JButton("Retangulo", imgRet);
         btnPolilinha = new JButton("Polilinha", imgPoli);
+
         btnSelecionar = new JButton("Selecionar", imgSel);
+
         btnCor = new JButton("Cores", new ImageIcon("botoes\\cores.jpg"));
         btnApagar = new JButton("Apagar", new ImageIcon("botoes\\apagar.jpg"));
         btnSair = new JButton("Sair", new ImageIcon("botoes\\sair.jpg"));
 
         btnSelIndice = new JButton("Selecionar índice");
-        btnMover = new JButton("Mover (ΔX,ΔY)");
+        btnMover = new JButton("Mover (X,Y)");
         btnApagarSelecionadas = new JButton("Apagar Selecionadas");
         btnLimparSelecao = new JButton("Limpar Seleção");
         btnListar = new JButton("Listar Figuras");
@@ -93,16 +92,18 @@ public class Editor extends JFrame
         pnlBotoes.add(btnSalvar);
         pnlBotoes.add(btnPonto);
         pnlBotoes.add(btnLinha);
+
         pnlBotoes.add(btnCirculo);
         pnlBotoes.add(btnElipse);
         pnlBotoes.add(btnRetangulo);
         pnlBotoes.add(btnPolilinha);
+
         pnlBotoes.add(btnSelecionar);
+
         pnlBotoes.add(btnCor);
         pnlBotoes.add(btnApagar);
         pnlBotoes.add(btnSair);
 
-        // ======= ADIÇÃO =======
         pnlBotoes.add(btnSelIndice);
         pnlBotoes.add(btnMover);
         pnlBotoes.add(btnApagarSelecionadas);
@@ -110,27 +111,30 @@ public class Editor extends JFrame
         pnlBotoes.add(btnListar);
 
 
+        // Parte dos Listeners
+
         btnAbrir.addActionListener(new FazAbertura());
         btnSalvar.addActionListener(new FazSalvar());
         btnPonto.addActionListener(new DesenhaPonto());
         btnLinha.addActionListener(new DesenhaLinha());
+
         btnCirculo.addActionListener(new DesenhaCirculo());
         btnElipse.addActionListener(new DesenhaElipse());
         btnRetangulo.addActionListener(new DesenhaRetangulo());
         btnPolilinha.addActionListener(new DesenhaPolilinha());
-        btnSelecionar.addActionListener(new SelecionarFigura());
 
+        btnSelecionar.addActionListener(new SelecionarFigura());
 
         btnCor.addActionListener(new EscolheCor());
         btnApagar.addActionListener(new ApagarTudo());
         btnSair.addActionListener(new SairDoPrograma());
 
-        // ======= ADIÇÃO: listeners dos novos botões =======
         btnSelIndice.addActionListener(new SelecionarPorIndice());
         btnMover.addActionListener(new MoverSelecionadas());
         btnApagarSelecionadas.addActionListener(new ApagarSelecionadas());
         btnLimparSelecao.addActionListener(new LimparSelecao());
         btnListar.addActionListener(new ListarFiguras());
+
 
 
         Container cntForm = getContentPane();
@@ -240,10 +244,10 @@ public class Editor extends JFrame
                                     figuras.incluirNoFinal(new Retangulo(xBase, yBase, largura, altura, cor));
                                     break;
                                 case "pl" :
-                                    // formato: pl; xc; yc; corR; corG; corB; qtdPontos; x1; y1; x2; y2; ... xn; yn
                                     int qtd = Integer.parseInt(campos[6].trim());
                                     Polilinha pl = new Polilinha(qtd, cor);
                                     int pos = 7;
+
                                     for (int i = 0; i < qtd; i++) {
                                         int x = Integer.parseInt(campos[pos++].trim());
                                         int y = Integer.parseInt(campos[pos++].trim());
@@ -251,12 +255,16 @@ public class Editor extends JFrame
                                     }
                                     figuras.incluirNoFinal(pl);
                                     break;
+
+
                             }
+
                         }
                         arqFiguras.close();
                         janelaFilha.setTitle(arquivo.getName());
                         desenharObjetos(pnlDesenho.getGraphics());
                     }
+
                     catch (Exception erroLeitura){
                         System.out.println("Erro de leitura no arquivo");
                     }
@@ -275,29 +283,36 @@ public class Editor extends JFrame
 
             int result = arqEscolhido.showSaveDialog(Editor.this);
 
-            if (result == JFileChooser.APPROVE_OPTION) {
+            if (result == JFileChooser.APPROVE_OPTION)
+            {
                 try {
                     figuras.gravarDados(arqEscolhido.getSelectedFile().getName());
-                } catch (IOException ex) {
+                }
+                catch (IOException ex)
+                {
                     throw new RuntimeException(ex);
                 }
             }
+
         }
     }
 
-    //Seleção
+    //Seleção por click
     private class SelecionarFigura implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
+        public void actionPerformed(ActionEvent e)
+        {
             limparEsperas();
             modoSelecao = true;
             statusBar1.setText("Mensagem: clique sobre a figura para selecioná-la.");
         }
     }
 
-    // ======= ADIÇÃO: Seleção por índice =======
-    private class SelecionarPorIndice implements ActionListener {
+    // Seleção por Indice
+    private class SelecionarPorIndice implements ActionListener
+    {
         public void actionPerformed(ActionEvent e) {
-            try {
+            try
+            {
                 String input = JOptionPane.showInputDialog("Digite o índice da figura a selecionar:");
                 if (input == null || input.isEmpty()) return;
 
@@ -318,16 +333,19 @@ public class Editor extends JFrame
                 g2.setStroke(new BasicStroke(3)); // espessura 2 pixels a mais
                 f.desenhar(Color.red, g2);
                 statusBar1.setText("Mensagem: figura " + indice + " selecionada!");
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 JOptionPane.showMessageDialog(Editor.this, "Erro ao selecionar figura!");
             }
         }
     }
 
-    // ======= ADIÇÃO: Mudar cor e mover figuras selecionadas =======
+    // Para mover as figuras selecionadas e mudar a cor das figuras selecionadas
     private class MoverSelecionadas implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            if (figurasSelecionadas.isEmpty()) {
+        public void actionPerformed(ActionEvent e)
+        {
+            if (figurasSelecionadas.isEmpty())
+            {
                 JOptionPane.showMessageDialog(Editor.this, "Nenhuma figura selecionada.");
                 return;
             }
@@ -336,13 +354,11 @@ public class Editor extends JFrame
                 String dxStr = JOptionPane.showInputDialog("Digite o deslocamento em X:");
                 String dyStr = JOptionPane.showInputDialog("Digite o deslocamento em Y:");
                 if (dxStr == null || dyStr == null) return;
-
                 int dx = Integer.parseInt(dxStr);
                 int dy = Integer.parseInt(dyStr);
 
                 for (int i : figurasSelecionadas) {
                     Ponto f = figuras.valorDe(i);
-
                     if (f instanceof Ponto) {
                         f.setX(f.getX() + dx);
                         f.setY(f.getY() + dy);
@@ -352,9 +368,11 @@ public class Editor extends JFrame
                         l.setY(l.getY() + dy);
                         l.pontoFinal.setX(l.pontoFinal.getX() + dx);
                         l.pontoFinal.setY(l.pontoFinal.getY() + dy);
+
                     } else if (f instanceof Retangulo || f instanceof Circulo || f instanceof Oval) {
                         f.setX(f.getX() + dx);
                         f.setY(f.getY() + dy);
+
                     } else if (f instanceof Polilinha) {
                         Polilinha pl = (Polilinha) f;
                         for (int j = 0; j < pl.getQtdPontos(); j++) {
@@ -362,21 +380,28 @@ public class Editor extends JFrame
                             p.setX(p.getX() + dx);
                             p.setY(p.getY() + dy);
                         }
+
+
                     }
+
                 }
 
                 pnlDesenho.repaint();
                 statusBar1.setText("Mensagem: figuras movidas (" + dx + "," + dy + ").");
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 JOptionPane.showMessageDialog(Editor.this, "Erro ao mover figuras selecionadas!");
             }
         }
     }
 
-    // ======= ADIÇÃO: Apagar figuras selecionadas =======
-    private class ApagarSelecionadas implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            if (figurasSelecionadas.isEmpty()) {
+    // Apagar figuras selecionadas
+    private class ApagarSelecionadas implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+            if (figurasSelecionadas.isEmpty())
+            {
                 JOptionPane.showMessageDialog(Editor.this, "Nenhuma figura selecionada.");
                 return;
             }
@@ -384,11 +409,11 @@ public class Editor extends JFrame
             // remove de trás pra frente pra evitar erro de índice
             figurasSelecionadas.sort((a, b) -> b - a);
             for (int i : figurasSelecionadas)
-                // corrigido: ManterFiguras possui método 'excluir', não 'remover'
+
                 try {
                     figuras.excluir(i);
                 } catch (IndexOutOfBoundsException ex) {
-                    // se der erro por algum motivo, apenas ignora essa posição
+                    // se der erro, só ignora essa posição
                 }
 
             figurasSelecionadas.clear();
@@ -397,7 +422,7 @@ public class Editor extends JFrame
         }
     }
 
-    // ======= ADIÇÃO: Limpar seleção =======
+    //Limpa a seleção
     private class LimparSelecao implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             figurasSelecionadas.clear();
@@ -407,12 +432,14 @@ public class Editor extends JFrame
         }
     }
 
-    // ======= ADIÇÃO: Listar figuras (índices e tipos) =======
-    private class ListarFiguras implements ActionListener {
+    //Listar figuras ( os índices e tipos). Só foi feito para facilitar
+    private class ListarFiguras implements ActionListener
+    {
         public void actionPerformed(ActionEvent e) {
             StringBuilder sb = new StringBuilder();
             sb.append("Índice : Tipo - detalhes\n");
             int n = figuras.getTamanho();
+
             for (int i = 0; i < n; i++) {
                 Ponto f = figuras.valorDe(i);
                 String tipo = f.getClass().getSimpleName();
@@ -450,7 +477,7 @@ public class Editor extends JFrame
         }
     }
 
-
+    //Ponto
     private class DesenhaPonto implements ActionListener {
         public void actionPerformed(ActionEvent e)
         {
@@ -460,6 +487,7 @@ public class Editor extends JFrame
         }
     }
 
+    //Linha
     private class DesenhaLinha implements ActionListener {
         public void actionPerformed(ActionEvent e)
         {
@@ -469,6 +497,7 @@ public class Editor extends JFrame
         }
     }
 
+    //Circulo
     private class DesenhaCirculo implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             statusBar1.setText("Mensagem: clique no centro do círculo:");
@@ -477,6 +506,7 @@ public class Editor extends JFrame
         }
     }
 
+    //Elipse
     private class DesenhaElipse implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             statusBar1.setText("Mensagem: clique no centro da elipse:");
@@ -485,6 +515,7 @@ public class Editor extends JFrame
         }
     }
 
+    //Retangulo
     private class DesenhaRetangulo implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             statusBar1.setText("Mensagem: clique no canto superior esquerdo do retângulo:");
@@ -503,15 +534,16 @@ public class Editor extends JFrame
         }
     }
 
+    // para o botão de escolher a cor da figura
     private class EscolheCor implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Color nova = JColorChooser.showDialog(Editor.this, "Escolha a cor", corAtual);
             if (nova != null) {
                 corAtual = nova;
 
-                // ======= ADIÇÃO =======
-                // Se há várias figuras selecionadas
-                if (!figurasSelecionadas.isEmpty()) {
+                // Se ter várias figuras selecionadas
+                if (!figurasSelecionadas.isEmpty())
+                {
                     for (int i : figurasSelecionadas) {
                         Ponto f = figuras.valorDe(i);
                         f.setCor(nova);
@@ -519,13 +551,15 @@ public class Editor extends JFrame
                     pnlDesenho.repaint();
                     statusBar1.setText("Mensagem: cor das figuras selecionadas alterada.");
                 }
-                // Caso tenha apenas uma figura selecionada diretamente
-                else if (figuraSelecionada != null) {
+
+                // Se tenha apenas uma figura selecionada diretamente
+                else if (figuraSelecionada != null)
+                {
                     figuraSelecionada.setCor(nova);
                     pnlDesenho.repaint();
                     statusBar1.setText("Mensagem: cor da figura selecionada alterada.");
                 }
-                // Caso nenhuma figura esteja selecionada
+                // Se nenhuma figura esteja selecionada
                 else {
                     statusBar1.setText("Mensagem: cor atual atualizada (para novas figuras).");
                 }
@@ -535,7 +569,9 @@ public class Editor extends JFrame
 
 
 
-    private class ApagarTudo implements ActionListener {
+    // Apaga todo o quadro
+    private class ApagarTudo implements ActionListener
+    {
         public void actionPerformed(ActionEvent e) {
             figuras = new ManterFiguras(100);
             pnlDesenho.repaint();
@@ -543,6 +579,7 @@ public class Editor extends JFrame
         }
     }
 
+    //Fecha o programa
     private class SairDoPrograma implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             int resposta = JOptionPane.showConfirmDialog(
@@ -555,8 +592,11 @@ public class Editor extends JFrame
             if (resposta == JOptionPane.YES_OPTION)
                 System.exit(0);
         }
+
+
     }
 
+    //Parte dos Eventos
     private class MeuJPanel extends JPanel implements MouseListener, MouseMotionListener
     {
         JPanel pnlStatus = new JPanel();
@@ -578,17 +618,21 @@ public class Editor extends JFrame
         }
 
 
+        //para mover a figura
         public void mouseDragged(MouseEvent e) {
-            if (figuraSelecionada != null) {
+            if (figuraSelecionada != null)
+            {
                 int dx = e.getX() - xAnterior;
                 int dy = e.getY() - yAnterior;
 
-                // Atualiza posição conforme o tipo
-                if (figuraSelecionada instanceof Ponto) {
+                // Atualiza posição de acordo com o tipo da figura
+                if (figuraSelecionada instanceof Ponto)
+                {
                     figuraSelecionada.setX(figuraSelecionada.getX() + dx);
                     figuraSelecionada.setY(figuraSelecionada.getY() + dy);
                 }
-                else if (figuraSelecionada instanceof Linha) {
+                else if (figuraSelecionada instanceof Linha)
+                {
                     Linha l = (Linha) figuraSelecionada;
                     l.setX(l.getX() + dx);
                     l.setY(l.getY() + dy);
@@ -597,22 +641,24 @@ public class Editor extends JFrame
                 }
                 else if (figuraSelecionada instanceof Circulo ||
                         figuraSelecionada instanceof Oval ||
-                        figuraSelecionada instanceof Retangulo) {
+                        figuraSelecionada instanceof Retangulo)
+                {
                     figuraSelecionada.setX(figuraSelecionada.getX() + dx);
                     figuraSelecionada.setY(figuraSelecionada.getY() + dy);
                 }
-                else if (figuraSelecionada instanceof Polilinha) {
+                else if (figuraSelecionada instanceof Polilinha)
+                {
                     Polilinha pl = (Polilinha) figuraSelecionada;
                     for (Ponto p : pl.getPontos()) {
                         p.setX(p.getX() + dx);
                         p.setY(p.getY() + dy);
                     }
+
+
                 }
 
                 xAnterior = e.getX();
                 yAnterior = e.getY();
-
-                // redesenha todas as figuras normalmente
                 pnlDesenho.repaint();
 
                 // desenha a figura selecionada em vermelho por cima
@@ -631,14 +677,16 @@ public class Editor extends JFrame
             statusBar1.setText("Mensagem:");
         }
 
+
+
         public void mousePressed (MouseEvent e)
         {
-            // ===== ADIÇÃO =====
             xAnterior = e.getX();
             yAnterior = e.getY();
 
+            // Parte da Seleção
             if (figuraSelecionada != null) {
-                movendoFigura = true; // inicia movimento se já havia figura selecionada
+                movendoFigura = true; // inicia movimento se já tinha uma figura selecionada
             }
 
             if (modoSelecao)
@@ -755,13 +803,15 @@ public class Editor extends JFrame
                 return; // impede que o clique prossiga para desenho
             }
 
-            // ===== ADIÇÃO =====
+
             // se clicar fora de qualquer modo e havia uma figura selecionada, desmarca
             if (!modoSelecao && figuraSelecionada != null && !SwingUtilities.isRightMouseButton(e)) {
                 figuraSelecionada = null;
                 pnlDesenho.repaint();
                 statusBar1.setText("Mensagem: nenhuma figura selecionada.");
             }
+
+            //Ponto
 
             if (esperaPonto)
             {
@@ -770,6 +820,8 @@ public class Editor extends JFrame
                 novoPonto.desenhar(novoPonto.getCor(), pnlDesenho.getGraphics());
                 esperaPonto = false;
             }
+
+            //Linha
             else if (esperaInicioLinha)
             {
                 p1.setX(e.getX());
@@ -788,6 +840,8 @@ public class Editor extends JFrame
                 esperaFimLinha = false;
             }
 
+
+            //Circulo
             else if (esperaCentroCirculo)
             {
                 p1.setX(e.getX());
@@ -809,6 +863,10 @@ public class Editor extends JFrame
                 esperaRaioCirculo = false;
                 statusBar1.setText("Mensagem:");
             }
+
+
+
+            //Oval/Elipsse
             else if (esperaCentroOval)
             {
                 p1.setX(e.getX());
@@ -836,6 +894,10 @@ public class Editor extends JFrame
                 statusBar1.setText("Mensagem:");
             }
 
+
+
+
+            //Retangulo
             else if (esperaCantoRetangulo)
             {
                 xInicioRet = e.getX();
@@ -857,6 +919,8 @@ public class Editor extends JFrame
                 esperaDimensaoRetangulo = false;
                 statusBar1.setText("Mensagem:");
             }
+
+
 
             //Polilinha
             else if (esperaInicioPolilinha || esperaPontoPolilinha)
@@ -893,6 +957,8 @@ public class Editor extends JFrame
         public void mouseEntered (MouseEvent e) {}
         public void mouseExited (MouseEvent e) {}
 
+
+
         public void mouseReleased(MouseEvent e) {
             if (movendoFigura) {
                 movendoFigura = false;
@@ -913,7 +979,7 @@ public class Editor extends JFrame
         }
 
 
-
+    // pra redesenhar as figuras selecionadas com a bordas vermelhas
         public void paintComponent(Graphics g)
         {
             super.paintComponent(g);
