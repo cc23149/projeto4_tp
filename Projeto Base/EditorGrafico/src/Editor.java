@@ -804,7 +804,7 @@ public class Editor extends JFrame
             }
 
 
-            // se clicar fora de qualquer modo e havia uma figura selecionada, desmarca
+            // se clicar fora enquanto estiver com uma figura selecionada, desmarca
             if (!modoSelecao && figuraSelecionada != null && !SwingUtilities.isRightMouseButton(e)) {
                 figuraSelecionada = null;
                 pnlDesenho.repaint();
